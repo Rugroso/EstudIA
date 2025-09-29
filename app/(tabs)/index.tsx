@@ -5,7 +5,6 @@ export default function HomeScreen() {
   return (
     <View>
       <Search />
-
     </View>
   );
 }

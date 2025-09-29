@@ -7,8 +7,10 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "types": ["expo", "react", "react-native"] 
+    "types": ["expo", "react", "react-native"],
+    "jsx": "react-native"
   },
+  
   "include": [
     "**/*.ts",
     "**/*.tsx",

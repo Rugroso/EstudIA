@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import React, { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { IconSymbol } from './ui/icon-symbol';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
@@ -79,7 +80,7 @@ export default function SearchScreen() {
       for (let i = 0; i < (documents?.length ?? 0); i++) {
         const d = documents[i];
         const content = d?.content ?? '';
-        const tokens = d?.token ?? Math.ceil(content.length / 4); // heurística si no tienes conteo exacto
+        const tokens = d?.token ?? Math.ceil(content.length / 4);
         if (tokenCount + tokens > 1500) break;
         tokenCount += tokens;
         contextText += `${String(content).trim()}\n--\n`;
@@ -125,14 +126,14 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={styles.wrapper}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>estudIA</Text>
-      </View>
-
+    <View style={{ flex: 1, padding: 16 }}>
       {/* Lista Q/A */}
-      <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 12 }}>
+      <View>
+        <Text style={styles.title}>
+          Bienvenido a EstudIA
+        </Text>
+      </View>
+      <ScrollView contentContainerStyle={{ paddingBottom: 12 }}>
         {questions.map((q, i) => {
           const a = answers[i];
           const isLoading = loading && !a;
@@ -164,7 +165,11 @@ export default function SearchScreen() {
           multiline
         />
         <Pressable onPress={handleSearch} style={[styles.button, styles.sendBtn]} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? '...' : 'Send'}</Text>
+          {loading ? (
+            <Text style={styles.buttonText}>...</Text>
+          ) : (
+            <IconSymbol name="paperplane.fill" size={20} color="white" />
+          )}
         </Pressable>
       </View>
     </View>
@@ -184,17 +189,7 @@ function generatePrompt(contextText: string, searchText: string) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: { flex: 1, padding: 16, gap: 12, backgroundColor: '#0b0b0c' },
-  header: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#333',
-    paddingBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: { color: '#e5e7eb', fontSize: 18, fontWeight: '700' },
-  list: { flex: 1, marginTop: 8 },
+  title: { color: 'black', fontSize: 20, fontWeight: '700', marginBottom: 12 },
   qIcon: { color: '#818cf8', fontWeight: '800', marginRight: 6 },
   qText: { color: '#c7d2fe', fontSize: 16, flexShrink: 1 },
   loading: { color: '#9ca3af' },
@@ -202,10 +197,7 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: 'row',
     gap: 8,
-    alignItems: 'flex-end',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#333',
-    paddingTop: 8,
+    alignItems: 'center',
   },
   input: {
     flex: 1,
@@ -215,7 +207,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     borderRadius: 12,
     padding: 12,
-    color: '#e5e7eb',
+    color: 'black', 
   },
   button: {
     backgroundColor: '#4f46e5',
