@@ -3,10 +3,33 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { IconSymbol } from './ui/icon-symbol';
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
-const EMBEDDING_URL = process.env.EXPO_PUBLIC_EMBEDDING_URL ?? 'http://127.0.0.1:8000/embedding';
-const CHAT_URL = process.env.EXPO_PUBLIC_CHAT_URL ?? 'http://127.0.0.1:8000/chat';
+// Centramos la lógica de variables para funcionar en Expo y en Next/Vercel
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.EXPO_PUBLIC_SUPABASE_URL ||
+  '';
+const SUPABASE_ANON =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+  '';
+
+// Si en Vercel (Next) dejamos que sean relativas a /api por defecto
+const EMBEDDING_URL =
+  process.env.NEXT_PUBLIC_EMBEDDING_URL ||
+  process.env.EXPO_PUBLIC_EMBEDDING_URL ||
+  '/api/embedding';
+
+const CHAT_URL =
+  process.env.NEXT_PUBLIC_CHAT_URL ||
+  process.env.EXPO_PUBLIC_CHAT_URL ||
+  '/api/chat';
+
+// Validación mínima (solo en cliente)
+if (typeof window !== 'undefined') {
+  if (!SUPABASE_URL || !SUPABASE_ANON) {
+    console.warn('Faltan variables de Supabase (ver .env/NEXT_PUBLIC_*)');
+  }
+}
 
 // ============ UI ============
 export default function SearchScreen() {
@@ -18,14 +41,17 @@ export default function SearchScreen() {
 
   const supabase = useMemo(() => createClient(SUPABASE_URL, SUPABASE_ANON), []);
 
-  const toastError = (message = 'Something went wrong') => {
-    // simple alert para web; si usas algún toast, reemplaza aquí
-    alert(message);
+  const toastError = (message = 'Error') => {
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-alert
+      alert(message);
+    } else {
+      console.log(message);
+    }
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // en Expo Web no hay router de Next; puedes limpiar estado o redirigir con location:
     if (Platform.OS === 'web') location.reload();
   };
 
@@ -33,19 +59,20 @@ export default function SearchScreen() {
     const q = text.trim();
     if (!q) return;
     setLoading(true);
-    setQuestions((prev) => [...prev, q]);
+    setQuestions(prev => [...prev, q]);
     setText('');
 
     try {
+      // 1) Embedding
       const er = await fetch(EMBEDDING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: q.replace(/\n/g, ' ') }),
+        body: JSON.stringify({ text: q.replace(/\n/g, ' ') })
       });
 
       if (!er.ok) {
-        toastError(`Embedding HTTP ${er.status}`);
-        setAnswers((prev) => [...prev, 'Error creando embedding.']);
+        toastError(`Embedding HTTP ${ er.status }`);
+        setAnswers(prev => [...prev, 'Error creando embedding.']);
         setLoading(false);
         return;
       }
@@ -55,22 +82,21 @@ export default function SearchScreen() {
 
       if (!embedding || !Array.isArray(embedding)) {
         toastError('Respuesta de embedding inválida');
-        setAnswers((prev) => [...prev, 'Respuesta de embedding inválida.']);
+        setAnswers(prev => [...prev, 'Respuesta de embedding inválida.']);
         setLoading(false);
         return;
       }
 
-      // 2) buscar documentos similares mediante RPC en Supabase
-      // Asegúrate que la RPC "match_documents" existe y su firma coincide
+      // 2) RPC en Supabase
       const { data: documents, error: rpcError } = await supabase.rpc('match_documents', {
         query_embedding: embedding,
         match_threshold: 0.3,
-        match_count: 10,
+        match_count: 10
       });
 
       if (rpcError) {
         toastError('RPC match_documents falló: ' + rpcError.message);
-        setAnswers((prev) => [...prev, 'No pude buscar contexto en la base.']);
+        setAnswers(prev => [...prev, 'No pude buscar contexto en la base.']);
         setLoading(false);
         return;
       }
@@ -83,42 +109,42 @@ export default function SearchScreen() {
         const tokens = d?.token ?? Math.ceil(content.length / 4);
         if (tokenCount + tokens > 1500) break;
         tokenCount += tokens;
-        contextText += `${String(content).trim()}\n--\n`;
+        contextText += `${ String(content).trim() }\n--\n`;
       }
 
       if (!contextText) {
-        setAnswers((prev) => [...prev, 'No encontré contexto relacionado. Intenta otra pregunta.']);
+        setAnswers(prev => [...prev, 'No encontré contexto relacionado. Intenta otra pregunta.']);
         setLoading(false);
         return;
       }
 
       const prompt = generatePrompt(contextText, q);
 
+      // 3) Chat
       const cr = await fetch(CHAT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt })
       });
 
       if (!cr.ok) {
-        toastError(`Chat HTTP ${cr.status}`);
-        setAnswers((prev) => [...prev, 'Error generando respuesta.']);
+        toastError(`Chat HTTP ${ cr.status }`);
+        setAnswers(prev => [...prev, 'Error generando respuesta.']);
         setLoading(false);
         return;
       }
 
       const cjson = await cr.json();
-      // acepta varias formas: { answer } o { choices: [{ text }] } o { content }
       const answer =
         cjson.answer ??
         cjson?.choices?.[0]?.text ??
         cjson?.content ??
         'No tuve respuesta del modelo.';
 
-      setAnswers((prev) => [...prev, String(answer)]);
+      setAnswers(prev => [...prev, String(answer)]);
     } catch (err: any) {
-      alert(err?.message ?? 'Fallo la búsqueda');
-      setAnswers((prev) => [...prev, 'Ocurrió un error en la búsqueda.']);
+      toastError(err?.message ?? 'Fallo la búsqueda');
+      setAnswers(prev => [...prev, 'Ocurrió un error en la búsqueda.']);
     } finally {
       setLoading(false);
       inputRef.current?.focus();
@@ -138,9 +164,9 @@ export default function SearchScreen() {
           const a = answers[i];
           const isLoading = loading && !a;
           return (
-            <View key={`${i}-${q}`} style={{ marginBottom: 16 }}>
+            <View key={`${ i }-${ q }`} style={{ marginBottom: 16 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                <Text style={[styles.qIcon]}>Q:</Text>
+                <Text style={styles.qIcon}>Q:</Text>
                 <Text style={styles.qText}>{q}</Text>
               </View>
               {isLoading ? (
@@ -182,8 +208,8 @@ function generatePrompt(contextText: string, searchText: string) {
     `Given the following sections from the estudIA documentation, answer the question ` +
     `using only that information, outputted in markdown format. If you are unsure and ` +
     `the answer is not explicitly written in the documentation, say "Sorry, I don't know how to help with that."\n\n` +
-    `Context sections:\n${contextText}\n\n` +
-    `Question: """\n${searchText}\n"""\n\n` +
+    `Context sections:\n${ contextText }\n\n` +
+    `Question: """\n${ searchText }\n"""\n\n` +
     `Answer as markdown (including related code snippets if available):\n`
   );
 }
@@ -191,13 +217,13 @@ function generatePrompt(contextText: string, searchText: string) {
 const styles = StyleSheet.create({
   title: { color: 'black', fontSize: 20, fontWeight: '700', marginBottom: 12 },
   qIcon: { color: '#818cf8', fontWeight: '800', marginRight: 6 },
-  qText: { color: '#c7d2fe', fontSize: 16, flexShrink: 1 },
-  loading: { color: '#9ca3af' },
-  aText: { color: '#e5e7eb', lineHeight: 20 },
+  qText: { color: '#222', fontSize: 16, flexShrink: 1 },
+  loading: { color: '#6b7280' },
+  aText: { color: '#111', lineHeight: 20 },
   inputBar: {
     flexDirection: 'row',
     gap: 8,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   input: {
     flex: 1,
@@ -207,14 +233,14 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     borderRadius: 12,
     padding: 12,
-    color: 'black', 
+    color: 'black'
   },
   button: {
     backgroundColor: '#4f46e5',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 12
   },
   sendBtn: {},
-  buttonText: { color: 'white', fontWeight: '700' },
+  buttonText: { color: 'white', fontWeight: '700' }
 });
