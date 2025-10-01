@@ -126,7 +126,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
+    <View style={styles.container}>
       {/* Lista Q/A */}
       <View>
         <Text style={styles.title}>
@@ -189,11 +189,31 @@ function generatePrompt(contextText: string, searchText: string) {
 }
 
 const styles = StyleSheet.create({
-  title: { color: 'black', fontSize: 20, fontWeight: '700', marginBottom: 12 },
-  qIcon: { color: '#818cf8', fontWeight: '800', marginRight: 6 },
-  qText: { color: '#c7d2fe', fontSize: 16, flexShrink: 1 },
-  loading: { color: '#9ca3af' },
-  aText: { color: '#e5e7eb', lineHeight: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#18181b',
+    padding: 16,
+  },
+  title: { 
+    color: 'white', 
+    fontSize: 20, 
+    fontWeight: '700', 
+    marginBottom: 12 
+  },
+  qIcon: { color: '#818cf8', 
+    fontWeight: '800', 
+    marginRight: 6 
+  },
+  qText: { color: '#c7d2fe', 
+    fontSize: 16, 
+    flexShrink: 1 
+  },
+  loading: 
+  { color: '#9ca3af' 
+  },
+  aText: { color: '#e5e7eb', 
+    lineHeight: 20 
+  },
   inputBar: {
     flexDirection: 'row',
     gap: 8,
