@@ -1,6 +1,7 @@
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { createClient } from '@supabase/supabase-js';
 import { useMemo, useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function DatasetsScreen() {
   const [content, setContent] = useState('');
@@ -64,7 +65,17 @@ export default function DatasetsScreen() {
         spellCheck
         style={styles.textarea}
       />
-      <Button title={loading ? 'Enviando...' : 'Submit'} onPress={handleSubmit} disabled={loading} />
+      <Pressable 
+        onPress={handleSubmit} 
+        style={styles.sendButton} 
+        disabled={loading}
+      >
+        {loading ? (
+          <Text style={styles.buttonText}>...</Text>
+        ) : (
+          <IconSymbol name="paperplane.fill" size={20} color="white" />
+        )}
+      </Pressable>
       {!!out && <Text style={{ color: '#ccc', marginTop: 8 }}>{out}</Text>}
       <Text style={styles.counter}>{content.length}/100000</Text>
     </View>
@@ -72,12 +83,31 @@ export default function DatasetsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 8, padding: 16 },
-  label: { fontSize: 16, fontWeight: '600', color: '#ccc' },
+  container: { 
+    flex: 1,
+    gap: 8, 
+    padding: 16,
+    backgroundColor: '#18181b',
+  },
+  label: { fontSize: 16, 
+    fontWeight: '600', 
+    color: '#ccc' 
+  },
   textarea: {
     color: '#ccc',
     minHeight: 140,
     borderWidth: 1, borderColor: '#ccc', borderRadius: 12, padding: 12, fontSize: 16,
+  },
+  sendButton: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#4f46e5',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  buttonText: { 
+    color: 'white', 
+    fontWeight: '700' 
   },
   counter: { alignSelf: 'flex-end', color: '#ccc' },
 });

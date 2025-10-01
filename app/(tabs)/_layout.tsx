@@ -27,7 +27,7 @@ export default function TabLayout() {
         name="datasets"
         options={{
           title: 'Datasets',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="folder.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="archivebox.fill" color={color} />,
         }}
       />
     </Tabs>
