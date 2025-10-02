@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-export default function DatasetsScreen() {
+export default function UploadText() {
   const [content, setContent] = useState('');
   const [out, setOut] = useState('');
   const [loading, setLoading] = useState(false);
