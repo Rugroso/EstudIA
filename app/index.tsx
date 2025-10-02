@@ -2,51 +2,143 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Redirect } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import { Animated, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function Homepage() {
   const [showTabs, setShowTabs] = useState(false);
+  const [enterClass, setEnterClass] = useState(false);
+  const [unirseSalon, setUnirseSalon] = useState(false);
+  const [crearSalon, setCrearSalon] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const handleEnterApp = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowTabs(true);
+  const handleEnterClass = () => {
+    animateTransition(() => setEnterClass(true));
+  };
+
+  const handleUnirseSalon = () => {
+    animateTransition(() => setUnirseSalon(true));
+  };
+
+  const handleCrearSalon = () => {
+    animateTransition(() => setCrearSalon(true));
+  };
+
+  const animateTransition = (callback: () => void) => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 0.9,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      callback();
     });
   };
 
-  if (showTabs) {
-    return <Redirect href="/(tabs)/study" />;
+  if (enterClass) {
+    return <Redirect href="/(tabs)/upload" />;
+  }
+  if (unirseSalon) {
+    return <Redirect href="/classroom/join" />;
+  }
+  if (crearSalon) {
+    return <Redirect href="/classroom/create" />;
   }
 
+
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.header}>
-          <ThemedText style={styles.title}>EstudIA</ThemedText>
-          <ThemedText style={styles.subtitle}>
-            App colaborativa de estudio con IA
-          </ThemedText>
-        </ThemedView>
-
+    <Animated.View style={[{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+      <ScrollView style={styles.container}>
         <ThemedView style={styles.content}>
-          <ThemedText style={styles.description}>
-            Bienvenido a EstudIA, Aqui te van a salir diferentes salones, crear salon, unirte, configuracion
-          </ThemedText>
+          <ThemedView style={styles.header}>
+            <ThemedText style={styles.title}>🎓 EstudIA</ThemedText>
+            <ThemedText style={styles.subtitle}>
+              App colaborativa de estudio con IA
+            </ThemedText>
+            <View style={styles.headerDivider} />
+          </ThemedView>
 
-          <Pressable 
-            style={({ pressed }) => [
-              styles.enterButton,
-              { opacity: pressed ? 0.8 : 1 }
-            ]}
-            onPress={handleEnterApp}
-          >
-            <Text style={styles.enterButtonText}>Ir a x salon (Matematicas)</Text>
-          </Pressable>
+          <ThemedView style={styles.welcomeCard}>
+            <ThemedText style={styles.welcomeText}>
+              ¡Bienvenido! Elige cómo quieres comenzar tu sesión de estudio:
+            </ThemedText>
+          </ThemedView>
 
+          <ThemedView style={styles.cardsContainer}>
+            {/* Card para entrar a salón existente */}
+            <Pressable 
+              style={({ pressed }) => [
+                styles.card,
+                styles.studyCard,
+                { transform: [{ scale: pressed ? 0.98 : 1 }] }
+              ]}
+              onPress={handleEnterClass}
+            >
+              <View style={styles.cardIcon}>
+                <Text style={styles.iconText}>📚</Text>
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Ir a Salón</Text>
+                <Text style={styles.cardSubtitle}>Matemáticas Avanzadas</Text>
+                <Text style={styles.cardDescription}>Continúa estudiando en tu salón actual</Text>
+              </View>
+              <View style={styles.cardArrow}>
+                <Text style={styles.arrowText}>→</Text>
+              </View>
+            </Pressable>
+
+            {/* Card para unirse a salón */}
+            <Pressable 
+              style={({ pressed }) => [
+                styles.card,
+                styles.joinCard,
+                { transform: [{ scale: pressed ? 0.98 : 1 }] }
+              ]}
+              onPress={handleUnirseSalon}
+            >
+              <View style={styles.cardIcon}>
+                <Text style={styles.iconText}>🚪</Text>
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Unirse a Salón</Text>
+                <Text style={styles.cardSubtitle}>Código de invitación</Text>
+                <Text style={styles.cardDescription}>Únete a un salón existente con código</Text>
+              </View>
+              <View style={styles.cardArrow}>
+                <Text style={styles.arrowText}>→</Text>
+              </View>
+            </Pressable>
+
+            {/* Card para crear salón */}
+            <Pressable 
+              style={({ pressed }) => [
+                styles.card,
+                styles.createCard,
+                { transform: [{ scale: pressed ? 0.98 : 1 }] }
+              ]}
+              onPress={handleCrearSalon}
+            >
+              <View style={styles.cardIcon}>
+                <Text style={styles.iconText}>✨</Text>
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Crear Salón</Text>
+                <Text style={styles.cardSubtitle}>Nuevo salón de estudio</Text>
+                <Text style={styles.cardDescription}>Crea tu propio salón colaborativo</Text>
+              </View>
+              <View style={styles.cardArrow}>
+                <Text style={styles.arrowText}>→</Text>
+              </View>
+            </Pressable>
+          </ThemedView>
 
           <ThemedView style={styles.footer}>
             <ThemedText style={styles.footerText}>
@@ -54,7 +146,7 @@ export default function Homepage() {
             </ThemedText>
           </ThemedView>
         </ThemedView>
-      </ThemedView>
+      </ScrollView>
     </Animated.View>
   );
 }
@@ -62,69 +154,136 @@ export default function Homepage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    opacity: 0.8,
-    textAlign: 'center',
+    backgroundColor: '#0a0a0a',
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    padding: 20,
   },
-  description: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 24,
-  },
-  enterButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
+  header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
+    marginTop: 60,
   },
-  enterButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#fff',
   },
-  features: {
+  subtitle: {
+    fontSize: 16,
+    opacity: 0.8,
+    textAlign: 'center',
+    color: '#fff',
+  },
+  headerDivider: {
+    width: 60,
+    height: 3,
+    backgroundColor: '#007AFF',
+    borderRadius: 2,
+    marginTop: 15,
+  },
+  welcomeCard: {
     backgroundColor: 'rgba(0, 122, 255, 0.1)',
     padding: 20,
-    borderRadius: 15,
+    borderRadius: 16,
     marginBottom: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.2)',
   },
-  featureTitle: {
+  welcomeText: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    color: '#fff',
+  },
+  cardsContainer: {
+    gap: 16,
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  studyCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
+  },
+  joinCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#34C759',
+  },
+  createCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9500',
+  },
+  cardIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  iconText: {
+    fontSize: 24,
+  },
+  cardContent: {
+    flex: 1,
+  },
+  cardTitle: {
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 15,
+    color: '#fff',
+    marginBottom: 4,
   },
-  featureItem: {
+  cardSubtitle: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
+    lineHeight: 20,
+  },
+  cardArrow: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  arrowText: {
     fontSize: 16,
-    marginBottom: 8,
-    lineHeight: 22,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   footer: {
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 40,
+    marginBottom: 20,
   },
   footerText: {
     fontSize: 14,
-    opacity: 0.7,
+    opacity: 0.6,
     textAlign: 'center',
+    color: '#fff',
   },
 });
