@@ -5,8 +5,8 @@ import { IconSymbol } from './ui/icon-symbol';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
-const EMBEDDING_URL = process.env.EXPO_PUBLIC_EMBEDDING_URL ?? 'http://127.0.0.1:8000/embedding';
-const CHAT_URL = process.env.EXPO_PUBLIC_CHAT_URL ?? 'http://127.0.0.1:8000/chat';
+const EMBEDDING_URL = process.env.EXPO_PUBLIC_EMBEDDING_URL ?? '';
+const CHAT_URL = process.env.EXPO_PUBLIC_CHAT_URL ?? '';
 
 // ============ UI ============
 export default function SearchScreen() {
@@ -20,7 +20,7 @@ export default function SearchScreen() {
 
   const toastError = (message = 'Something went wrong') => {
     // simple alert para web; si usas algún toast, reemplaza aquí
-    alert(message);
+    alert('hola ' + message);
   };
 
   const handleLogout = async () => {
@@ -36,13 +36,19 @@ export default function SearchScreen() {
     setQuestions((prev) => [...prev, q]);
     setText('');
 
+    console.log('🔍 Iniciando búsqueda para:', q);
+    console.log('🌐 EMBEDDING_URL:', EMBEDDING_URL);
+    console.log('💬 CHAT_URL:', CHAT_URL);
+
     try {
+      console.log('📡 Haciendo request de embedding...');
       const er = await fetch(EMBEDDING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: q.replace(/\n/g, ' ') }),
       });
 
+      console.log('📥 Respuesta embedding status:', er.status);
       if (!er.ok) {
         toastError(`Embedding HTTP ${er.status}`);
         setAnswers((prev) => [...prev, 'Error creando embedding.']);
@@ -51,6 +57,7 @@ export default function SearchScreen() {
       }
 
       const ejson = await er.json();
+      console.log('🔢 Respuesta embedding JSON:', ejson);
       const embedding: number[] = ejson.embedding ?? ejson?.data?.[0]?.embedding;
 
       if (!embedding || !Array.isArray(embedding)) {
@@ -62,12 +69,14 @@ export default function SearchScreen() {
 
       // 2) buscar documentos similares mediante RPC en Supabase
       // Asegúrate que la RPC "match_documents" existe y su firma coincide
+      console.log('🗃️ Buscando documentos en Supabase...');
       const { data: documents, error: rpcError } = await supabase.rpc('match_documents', {
         query_embedding: embedding,
         match_threshold: 0.3,
         match_count: 10,
       });
 
+      console.log('📄 Documentos encontrados:', documents?.length || 0);
       if (rpcError) {
         toastError('RPC match_documents falló: ' + rpcError.message);
         setAnswers((prev) => [...prev, 'No pude buscar contexto en la base.']);
@@ -94,12 +103,14 @@ export default function SearchScreen() {
 
       const prompt = generatePrompt(contextText, q);
 
+      console.log('🤖 Enviando prompt al chat...');
       const cr = await fetch(CHAT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
       });
 
+      console.log('💭 Respuesta chat status:', cr.status);
       if (!cr.ok) {
         toastError(`Chat HTTP ${cr.status}`);
         setAnswers((prev) => [...prev, 'Error generando respuesta.']);
@@ -117,6 +128,8 @@ export default function SearchScreen() {
 
       setAnswers((prev) => [...prev, String(answer)]);
     } catch (err: any) {
+      console.error('❌ Error completo:', err);
+      console.error('❌ Error stack:', err?.stack);
       alert(err?.message ?? 'Fallo la búsqueda');
       setAnswers((prev) => [...prev, 'Ocurrió un error en la búsqueda.']);
     } finally {
