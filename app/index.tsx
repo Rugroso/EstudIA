@@ -44,7 +44,7 @@ export default function Homepage() {
   };
 
   if (enterClass) {
-    return <Redirect href="/(tabs)/upload" />;
+    return <Redirect href="/(tabs)/study/overview" />;
   }
   if (unirseSalon) {
     return <Redirect href="/classroom/join" />;

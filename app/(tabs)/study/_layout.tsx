@@ -16,6 +16,12 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
       }}>
       <Tabs.Screen
+        name="overview"
+        options={{
+          title: 'Resumen',
+        }}
+      />
+      <Tabs.Screen
         name="estudia"
         options={{
           title: 'EstudIA',
