@@ -7,7 +7,7 @@ export default function ClassroomOverview() {
       <Text style={styles.title}>Bienvenido a Matematicas</Text>
        <Text style={styles.title} >Aqui va a estar un overview de contenido de la clase</Text>
       <Text style={styles.title}>Tipo companeros, posts o nose</Text>
-      <Button title="Regresar" onPress={() => router.push('/')} />
+      <Button title="Regresar" onPress={() => router.push('/homepage')} />
     </View>
   );
 }

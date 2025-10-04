@@ -4,8 +4,8 @@ import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 
 const supabase = createClient(
-  process.env.EXPO_SUPABASE_URL!,
-  process.env.EXPO_SUPABASE_PUBLIC_ANON_KEY!,
+  process.env.EXPO_PUBLIC_SUPABASE_URL!,
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
   {
     auth: {
       persistSession: true,
