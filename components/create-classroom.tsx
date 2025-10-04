@@ -38,7 +38,6 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
 
     try {
 
-      // Generar código único
       const classroomCode = generateClassroomCode();
 
       // Crear el salón en Supabase

@@ -5,11 +5,10 @@ import { StyleSheet, View } from 'react-native';
 export default function CreateClassroomPage() {
   const handleSuccess = (classroom: any) => {
     console.log('Classroom created successfully:', classroom);
-    // Opcional: hacer algo adicional cuando se crea el salón
   };
 
   const handleCancel = () => {
-    router.back();
+    router.push('/');
   };
 
   return (

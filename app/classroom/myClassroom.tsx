@@ -1,20 +1,21 @@
+import MyClassroom from '@/components/my-classroom';
 import { useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Button, View } from 'react-native';
 
-export default function MyClassroom() {
+export default function MyClassroomScreen() {
     const router = useRouter();
     const handleVolverHome = () => {
         router.push('/');
     };
         return (
             <View >
-                <Text>My Classroom Screen</Text>
-                <Pressable 
-                          style={[styles.button, styles.backButton]}
-                          onPress={handleVolverHome}
-                        >
-                          <Text style={styles.buttonTextBack}>← Volver al Inicio</Text>
-                        </Pressable>
+                <MyClassroom />
+                <Button
+                    title="Volver al Inicio"
+                    onPress={handleVolverHome}
+                    color="#444"
+                />
+                
             </View>
             
         );

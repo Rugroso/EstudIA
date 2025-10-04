@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
       const [enterClass, setEnterClass] = useState(false);
       const [unirseSalon, setUnirseSalon] = useState(false);
       const [crearSalon, setCrearSalon] = useState(false);
+      const [verMisSalones, setVerMisSalones] = useState(false);
       const fadeAnim = useRef(new Animated.Value(1)).current;
       const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -23,6 +24,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
       const handleCrearSalon = () => {
         animateTransition(() => setCrearSalon(true));
       };
+
+      const handleVerMisSalones = () => {
+        animateTransition(() => setVerMisSalones(true));
+      }
 
       const animateTransition = (callback: () => void) => {
         Animated.parallel([
@@ -50,7 +55,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
       if (crearSalon) {
         return <Redirect href="/classroom/create" />;
       }
-
+      if (verMisSalones) {
+        return <Redirect href="/classroom/myClassroom" />;
+      }
 
       return (
         <Animated.View style={[{ opacity: fadeAnim, transform: [{ scale: scaleAnim }], flex: 1, backgroundColor: '#000' }]}>
@@ -116,7 +123,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
                   </View>
                 </Pressable>
 
-                {/* Card para crear salón */}
+                {/* Card para crear a salón */}
                 <Pressable 
                   style={({ pressed }) => [
                     styles.card,
@@ -126,11 +133,34 @@ import { SafeAreaView } from 'react-native-safe-area-context';
                   onPress={handleCrearSalon}
                 >
                   <View style={styles.cardIcon}>
+                    <Text style={styles.iconText}>🚪</Text>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>Crear a Salón</Text>
+                    <Text style={styles.cardSubtitle}>Código de invitación</Text>
+                    <Text style={styles.cardDescription}>Crea un nuevo salón con un código de invitación</Text>
+                  </View>
+                  <View style={styles.cardArrow}>
+                    <Text style={styles.arrowText}>→</Text>
+                  </View>
+                </Pressable>
+
+
+                {/* Card para ver mis salones */}
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.card,
+                    styles.createCard,
+                    { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                  ]}
+                  onPress={handleVerMisSalones}
+                >
+                  <View style={styles.cardIcon}>
                     <Text style={styles.iconText}>✨</Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle}>Crear Salón</Text>
-                    <Text style={styles.cardSubtitle}>Nuevo salón de estudio</Text>
+                    <Text style={styles.cardTitle}>Mis salones</Text>
+                    <Text style={styles.cardSubtitle}>Lista de salones</Text>
                     <Text style={styles.cardDescription}>Crea tu propio salón colaborativo</Text>
                   </View>
                   <View style={styles.cardArrow}>
