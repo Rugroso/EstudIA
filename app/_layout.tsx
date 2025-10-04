@@ -15,7 +15,7 @@ export default function RootLayout() {
           <Stack.Screen name="classroom" />
         </Stack>
       </SafeAreaProvider>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
     </ThemeProvider>
   );
 }

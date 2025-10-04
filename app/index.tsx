@@ -42,7 +42,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
       };
 
       if (enterClass) {
-        return <Redirect href="/(tabs)/study/overview" />;
+        return <Redirect href="/(tabs)/(drawer)/overview" />;
       }
       if (unirseSalon) {
         return <Redirect href="/classroom/join" />;

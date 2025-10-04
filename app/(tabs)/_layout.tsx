@@ -1,24 +1,44 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { Icon, Label, NativeTabs, VectorIcon } from 'expo-router/unstable-native-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function TabsLayout() {
-  const colorScheme = useColorScheme();
+const isWeb = Platform.OS === 'web';
 
+export default function TabsLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DarkTheme}>
+    <ThemeProvider value={DarkTheme}>
       <NativeTabs>
-        <NativeTabs.Trigger name="study" />
-        <NativeTabs.Trigger name="upload"/>
+        <NativeTabs.Trigger name="(drawer)">
+          <Label>Estudiar</Label>
+          {Platform.select({
+            ios: <Icon sf={{ default: "book", selected: "book.fill" }} />,
+            android: <Icon src={<VectorIcon family={MaterialIcons} name="school" />} />,
+            web: <VectorIcon family={MaterialIcons} name="school" />,
+          })}
+        </NativeTabs.Trigger>
+        {!isWeb ? (
+          <NativeTabs.Trigger name="upload">
+            <Label>Subir</Label>
+            {Platform.select({
+              ios: <Icon sf={{ default: "icloud.and.arrow.up", selected: "icloud.and.arrow.up.fill" }} />,
+              android: <Icon src={<VectorIcon family={MaterialIcons} name="cloud-upload" />} />,
+            })}
+          </NativeTabs.Trigger>
+        ) : (
+          <NativeTabs.Trigger name="upload">
+            <Label>Subir Datos</Label>
+            <VectorIcon family={MaterialIcons} name="cloud-upload" />
+          </NativeTabs.Trigger>
+        )}
       </NativeTabs>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
     </ThemeProvider>
   );
 }
