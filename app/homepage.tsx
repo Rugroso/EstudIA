@@ -1,7 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/context/AuthContext';
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -59,6 +59,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
               onPress: async () => {
                 try {
                   await logout();
+                  router.replace("/login");
                 } catch (error) {
                   Alert.alert("Error", "No se pudo cerrar sesión");
                 }
