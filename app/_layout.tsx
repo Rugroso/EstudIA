@@ -3,11 +3,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from "../context/AuthContext";
+
 
 export default function RootLayout() {
 
   return (
     <ThemeProvider value={DarkTheme}>
+      <AuthProvider>
       <SafeAreaProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
@@ -15,7 +18,8 @@ export default function RootLayout() {
           <Stack.Screen name="classroom" />
         </Stack>
       </SafeAreaProvider>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
