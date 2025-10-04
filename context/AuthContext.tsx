@@ -259,23 +259,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           imageUrl = await processImage(profilePicture, authData.user.id);
         }
 
-        // Insertar datos del usuario en la tabla users
+        // Actualizar datos del usuario en la tabla users (el trigger ya lo creó)
         const { error: dbError } = await supabase
           .from('users')
-          .insert({
-            id: authData.user.id,
+          .update({
             name,
             last_name: lastName,
-            email,
             birthdate,
             gender,
             location,
             cellphone,
             profile_picture: imageUrl,
             is_admin: false,
-          });
+          })
+          .eq('id', authData.user.id);
 
-        if (dbError) throw dbError;
+        if (dbError) {
+          console.error('Error updating user data:', dbError);
+          // Si falla la actualización, eliminar el usuario de auth
+          await supabase.auth.admin.deleteUser(authData.user.id);
+          throw new Error("Error al guardar los datos del usuario");
+        }
 
         Alert.alert(
           "Registro exitoso", 
@@ -308,21 +312,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const imageUrl = profilePicture ? await processImage(profilePicture, uid) : "";
       
-      // Insertar datos del usuario en la tabla users
+      // Actualizar datos del usuario en la tabla users (ya existe por el trigger)
       const { error } = await supabase
         .from('users')
-        .insert({
-          id: uid,
+        .update({
           name,
           last_name: lastName,
-          email,
           birthdate,
           gender,
           location,
           cellphone,
           profile_picture: imageUrl,
           is_admin: false,
-        });
+        })
+        .eq('id', uid);
 
       if (error) throw error;
 
