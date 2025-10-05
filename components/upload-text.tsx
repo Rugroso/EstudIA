@@ -84,10 +84,8 @@ export default function UploadText() {
 
 const styles = StyleSheet.create({
   container: { 
-    flex: 1,
     gap: 8, 
-    padding: 16,
-    backgroundColor: '#18181b',
+    paddingTop: 4,
   },
   label: { fontSize: 16, 
     fontWeight: '600', 
@@ -96,7 +94,12 @@ const styles = StyleSheet.create({
   textarea: {
     color: '#ccc',
     minHeight: 140,
-    borderWidth: 1, borderColor: '#ccc', borderRadius: 12, padding: 12, fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
   },
   sendButton: {
     alignSelf: 'flex-end',
@@ -109,5 +112,5 @@ const styles = StyleSheet.create({
     color: 'white', 
     fontWeight: '700' 
   },
-  counter: { alignSelf: 'flex-end', color: '#ccc' },
+  counter: { alignSelf: 'flex-end', color: '#9ca3af' },
 });
