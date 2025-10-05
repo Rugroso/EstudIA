@@ -1,3 +1,4 @@
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -9,6 +10,7 @@ interface JoinClassroomProps {
 }
 
 export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProps) {
+  const { user } = useAuth();
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [foundClassroom, setFoundClassroom] = useState<any>(null);
@@ -93,7 +95,7 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
 
     try {
       // Obtener el usuario actual (por ahora usamos un ID temporal)
-      const userId = '00000000-0000-0000-0000-000000000000'; // Temporalmente vacío
+      const userId = user?.id; // Usuario autenticado
       
       // Verificar si el usuario ya es miembro
       const { data: existingMember, error: memberCheckError } = await supabase
@@ -109,7 +111,7 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
-              router.push('/(tabs)/upload');
+              router.push('/(tabs)/(drawer)/estudia');
             }
           }
         ]);
@@ -142,7 +144,7 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
-              router.push('/(tabs)/upload');
+              router.push('/(tabs)/(drawer)/estudia');
             }
           }
         ]

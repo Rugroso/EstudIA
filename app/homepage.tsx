@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
       const [enterClass, setEnterClass] = useState(false);
       const [unirseSalon, setUnirseSalon] = useState(false);
       const [crearSalon, setCrearSalon] = useState(false);
+      const [verSalon, setVerSalon] = useState(false);
       const fadeAnim = useRef(new Animated.Value(1)).current;
       const scaleAnim = useRef(new Animated.Value(1)).current;
       
@@ -26,6 +27,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
       const handleCrearSalon = () => {
         animateTransition(() => setCrearSalon(true));
       };
+
+      const handleVerSalon = () => {
+        animateTransition(() => setVerSalon(true));
+      }
 
       const animateTransition = (callback: () => void) => {
         Animated.parallel([
@@ -78,7 +83,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
       if (crearSalon) {
         return <Redirect href="/classroom/create" />;
       }
-
+      if (verSalon) {
+        return <Redirect href="/classroom/myClassroom" />;
+      }
 
       return (
         <Animated.View style={[{ opacity: fadeAnim, transform: [{ scale: scaleAnim }], flex: 1, backgroundColor: '#000' }]}>
@@ -165,6 +172,29 @@ import { SafeAreaView } from 'react-native-safe-area-context';
                     <Text style={styles.arrowText}>→</Text>
                   </View>
                 </Pressable>
+
+                {/* Card para ver salón */}
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.card,
+                    styles.createCard,
+                    { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                  ]}
+                  onPress={handleVerSalon}
+                >
+                  <View style={styles.cardIcon}>
+                    <Text style={styles.iconText}>✨</Text>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>Lista de salones</Text>
+                    <Text style={styles.cardSubtitle}>Salones disponibles</Text>
+                    <Text style={styles.cardDescription}>Explora los salones a los que puedes unirte</Text>
+                  </View>
+                  <View style={styles.cardArrow}>
+                    <Text style={styles.arrowText}>→</Text>
+                  </View>
+                </Pressable>
+
               </ThemedView>
 
               <ThemedView style={styles.footer}>

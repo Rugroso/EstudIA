@@ -9,11 +9,14 @@ export default function MyClassroomScreen() {
     };
         return (
             <View >
-                <MyClassroom />
+                
                 <Button
                     title="Volver al Inicio"
                     onPress={handleVolverHome}
                     color="#444"
+                />
+                <MyClassroom 
+                    onClassroomSelect={() => console.log('Leave class')}
                 />
                 
             </View>

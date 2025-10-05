@@ -1,16 +1,17 @@
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 
 interface Classroom {
@@ -32,6 +33,7 @@ interface MyClassroomProps {
 }
 
 export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
+  const { user } = useAuth(); 
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -52,8 +54,13 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
 
   const loadUserClassrooms = async () => {
     try {
-      // Temporalmente usar un ID fijo (más tarde se reemplazará con auth real)
-      const userId = '00000000-0000-0000-0000-000000000000';
+      if (!user?.id) {
+        console.warn('Usuario no autenticado');
+        setClassrooms([]);
+        return;
+      }
+
+      const userId = user.id;
 
       // Obtener todos los salones donde el usuario es miembro
       const { data: membershipData, error: membershipError } = await supabase
@@ -131,7 +138,7 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
 
   const handleClassroomPress = (classroom: Classroom) => {
     onClassroomSelect?.(classroom);
-    router.push('/(tabs)/upload');
+    router.push('/(tabs)/(drawer)/estudia');
   };
 
   const handleLeaveClassroom = async (classroom: Classroom) => {
@@ -150,7 +157,12 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
           style: 'destructive',
           onPress: async () => {
             try {
-              const userId = '00000000-0000-0000-0000-000000000000';
+              if (!user?.id) {
+                showAlert('Error', 'Usuario no autenticado');
+                return;
+              }
+              
+              const userId = user.id;
               
               const { error } = await supabase
                 .from('classroom_members')
@@ -216,6 +228,21 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Cargando tus salones...</Text>
+      </View>
+    );
+  }
+
+  // Si el usuario no está autenticado
+  if (!user) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>❌ Usuario no autenticado</Text>
+        <Pressable 
+          style={styles.loginButton}
+          onPress={() => router.push('/login')}
+        >
+          <Text style={styles.buttonText}>Iniciar Sesión</Text>
+        </Pressable>
       </View>
     );
   }
@@ -499,5 +526,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FF3B30',
     fontWeight: '500',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 16,
+    textAlign: 'center' as const,
+    marginBottom: 20,
+  },
+  loginButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
   },
 });

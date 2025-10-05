@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 export default function CreateClassroomPage() {
   const handleSuccess = (classroom: any) => {
+    router.push(`/(tabs)/(drawer)/estudia`);
     console.log('Classroom created successfully:', classroom);
   };
 

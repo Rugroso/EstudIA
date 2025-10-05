@@ -1,7 +1,8 @@
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface CreateClassroomProps {
   onSuccess?: (classroom: any) => void;
@@ -9,10 +10,24 @@ interface CreateClassroomProps {
 }
 
 export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroomProps) {
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+    const showAlert = (title: string, message: string, buttons?: Array<{text: string, onPress?: () => void, style?: 'default' | 'cancel' | 'destructive'}>) => {
+      if (Platform.OS === 'web') {
+        const result = window.confirm(`${title}\n\n${message}`);
+        if (result && buttons && buttons.length > 1) {
+          buttons[1].onPress?.();
+        } else if (!result && buttons && buttons.length > 1) {
+          buttons[0].onPress?.();
+        }
+      } else {
+        Alert.alert(title, message, buttons);
+      }
+    };
 
   const generateClassroomCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -24,13 +39,18 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
   };
 
   const handleCreateClassroom = async () => {
+    if (!user) {
+      showAlert('Error', 'Debes iniciar sesión para crear un salón');
+      return;
+    }
+
     if (!name.trim()) {
-      Alert.alert('Error', 'El nombre del salón es requerido');
+      showAlert('Error', 'El nombre del salón es requerido');
       return;
     }
 
     if (!subject.trim()) {
-      Alert.alert('Error', 'La materia es requerida');
+      showAlert('Error', 'La materia es requerida');
       return;
     }
 
@@ -40,7 +60,6 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
 
       const classroomCode = generateClassroomCode();
 
-      // Crear el salón en Supabase
       const { data: classroom, error } = await supabase
         .from('classrooms')
         .insert([
@@ -49,7 +68,7 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
             subject: subject.trim(),
             description: description.trim(),
             code: classroomCode,
-            created_by: '00000000-0000-0000-0000-000000000000', // Temporalmente vacío
+            created_by: user?.id || '', 
             created_at: new Date().toISOString(),
           }
         ])
@@ -58,11 +77,11 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
 
       if (error) {
         console.error('Error creating classroom:', error);
-        Alert.alert('Error', 'No se pudo crear el salón. Intenta de nuevo.');
+        showAlert('Error', 'No se pudo crear el salón. Intenta de nuevo.');
         return;
       }
 
-      Alert.alert(
+      showAlert(
         'Salón Creado',
         `¡Tu salón "${name}" ha sido creado exitosamente!\n\nCódigo: ${classroomCode}\n\nComparte este código con tus compañeros para que se unan.`,
         [
@@ -77,7 +96,7 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
-              router.push('/(tabs)/upload');
+              router.push('/(tabs)/(drawer)/estudia');
             }
           }
         ]
@@ -88,7 +107,7 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
       setDescription('');
 
       // Agregar al creador como miembro del salón
-      /*await supabase
+      await supabase
         .from('classroom_members')
         .insert([
           {
@@ -97,12 +116,12 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
             role: 'admin',
             joined_at: new Date().toISOString(),
           }
-        ]);*/
+        ]);
 
 
     } catch (error) {
       console.error('Unexpected error:', error);
-      Alert.alert('Error', 'Ocurrió un error inesperado. Intenta de nuevo.');
+      showAlert('Error', 'Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
       setIsLoading(false);
     }
