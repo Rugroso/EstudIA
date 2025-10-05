@@ -40,6 +40,13 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite que EstudIA acceda a tus fotos para seleccionar y subir imágenes.",
+          "cameraPermission": "Permite usar la cámara para tomar fotos."
+        }
       ]
     ],
     "experiments": {
