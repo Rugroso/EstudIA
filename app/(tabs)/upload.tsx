@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
+import { useClassroom } from '@/context/ClassroomContext';
 import { useState } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as FileSystem from 'expo-file-system';
@@ -21,6 +22,7 @@ import { decode as base64ToArrayBuffer } from 'base64-arraybuffer';
 export default function ModalScreen() {
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
+  const { selectedClassroom } = useClassroom();
   const [uploading, setUploading] = useState(false);
   const [lastUpload, setLastUpload] = useState<string | null>(null);
   const [lastUrl, setLastUrl] = useState<string | null>(null);
@@ -140,6 +142,11 @@ export default function ModalScreen() {
     try {
       setUploading(true);
       setLastUpload(null);
+      if (!selectedClassroom?.id) {
+        Alert.alert('Selecciona un salón', 'Primero elige un salón en "Mis salones" para asociar el archivo.');
+        setUploading(false);
+        return;
+      }
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       const { data: userData } = await supabase.auth.getUser();
       const prefix = userData?.user?.id ?? 'anon';
@@ -152,6 +159,16 @@ export default function ModalScreen() {
         .upload(path, file, { contentType: (file?.type as string) || undefined, upsert: false });
 
       if (error) throw error;
+      // Insert metadata row
+      await insertClassroomDocument({
+        classroomId: selectedClassroom.id,
+        ownerId: userData?.user?.id ?? null,
+        storagePath: path,
+        originalFilename: safeName,
+        mimeType: (file?.type as string) || null,
+        sizeBytes: (file?.size as number) || null,
+        imageDims: undefined,
+      });
       setLastUpload(path);
       try {
         const signed = await supabase.storage.from('uploads').createSignedUrl(path, 60 * 60 * 24 * 7);
@@ -178,16 +195,27 @@ export default function ModalScreen() {
     try {
       setUploading(true);
       setLastUpload(null);
+      if (!selectedClassroom?.id) {
+        Alert.alert('Selecciona un salón', 'Primero elige un salón en "Mis salones" para asociar el archivo.');
+        setUploading(false);
+        return;
+      }
       // Convert local URI to a body compatible with Supabase Storage
       let body: Blob | ArrayBuffer;
+      let sizeBytes: number | undefined;
       if (Platform.OS === 'web') {
         // On web, Object URLs/File URLs can be fetched to Blob
         const res = await fetch(uri);
         body = await res.blob();
+        try { sizeBytes = (body as Blob).size; } catch {}
       } else {
         // On native, use ArrayBuffer from base64 per Supabase guidance
         // Ensure the file is cached/readable
         // readAsStringAsync returns a base64 string without data URI prefix
+        try {
+          const info = await FileSystem.getInfoAsync(uri, { size: true });
+          if ((info as any)?.size) sizeBytes = (info as any).size as number;
+        } catch {}
         const base64 = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
@@ -206,6 +234,16 @@ export default function ModalScreen() {
         .upload(path, body as any, { contentType, upsert: false });
 
       if (error) throw error;
+  // Insert metadata row
+  await insertClassroomDocument({
+    classroomId: selectedClassroom.id,
+    ownerId: userData?.user?.id ?? null,
+    storagePath: path,
+    originalFilename: fileName,
+    mimeType: contentType || null,
+    sizeBytes: sizeBytes ?? undefined,
+    imageDims: pending?.type === 'image' ? { w: pending?.width, h: pending?.height } : undefined,
+  });
   setLastUpload(path);
   try {
     const signed = await supabase.storage.from('uploads').createSignedUrl(path, 60 * 60 * 24 * 7);
@@ -224,6 +262,41 @@ export default function ModalScreen() {
       Alert.alert('Error al subir', e?.message ?? 'Fallo desconocido');
     } finally {
       setUploading(false);
+    }
+  };
+
+  type InsertDocArgs = {
+    classroomId: string;
+    ownerId: string | null;
+    storagePath: string;
+    originalFilename: string | null;
+    mimeType: string | null;
+    sizeBytes?: number | null;
+    imageDims?: { w?: number; h?: number } | undefined;
+  };
+
+  const insertClassroomDocument = async (args: InsertDocArgs) => {
+    try {
+      if (!args.ownerId) throw new Error('Usuario no autenticado');
+      const payload: Record<string, any> = {
+        classroom_id: args.classroomId,
+        owner_user_id: args.ownerId,
+        bucket: 'uploads',
+        storage_path: args.storagePath,
+        original_filename: args.originalFilename,
+        mime_type: args.mimeType,
+        size_bytes: args.sizeBytes ?? null,
+        status: 'uploaded',
+      };
+      if (args.imageDims?.w && args.imageDims?.h) {
+        payload.image_width = Math.floor(args.imageDims.w);
+        payload.image_height = Math.floor(args.imageDims.h);
+      }
+      const { error } = await supabase.from('classroom_documents').insert([payload]);
+      if (error) throw error;
+    } catch (e: any) {
+      console.error('Error inserting classroom_documents row:', e);
+      Alert.alert('Advertencia', 'El archivo se subió pero no se pudo registrar en la base.');
     }
   };
 

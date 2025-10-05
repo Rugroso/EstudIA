@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useClassroom } from '@/context/ClassroomContext';
 
 interface JoinClassroomProps {
   onSuccess?: (classroom: any) => void;
@@ -11,6 +12,7 @@ interface JoinClassroomProps {
 
 export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProps) {
   const { user } = useAuth();
+  const { setSelectedClassroom } = useClassroom();
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [foundClassroom, setFoundClassroom] = useState<any>(null);
@@ -111,6 +113,7 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
+              setSelectedClassroom(classroom);
               router.push('/(tabs)/(drawer)/estudia');
             }
           }
@@ -144,6 +147,7 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
+              setSelectedClassroom(classroom);
               router.push('/(tabs)/(drawer)/estudia');
             }
           }

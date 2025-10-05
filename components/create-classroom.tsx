@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useClassroom } from '@/context/ClassroomContext';
 
 interface CreateClassroomProps {
   onSuccess?: (classroom: any) => void;
@@ -11,6 +12,7 @@ interface CreateClassroomProps {
 
 export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroomProps) {
   const { user } = useAuth();
+  const { setSelectedClassroom } = useClassroom();
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
@@ -96,6 +98,7 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
+              setSelectedClassroom(classroom as any);
               router.push('/(tabs)/(drawer)/estudia');
             }
           }

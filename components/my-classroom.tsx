@@ -1,6 +1,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
+import { useClassroom } from '@/context/ClassroomContext';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -34,6 +35,7 @@ interface MyClassroomProps {
 
 export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
   const { user } = useAuth(); 
+  const { setSelectedClassroom } = useClassroom();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -138,6 +140,8 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
 
   const handleClassroomPress = (classroom: Classroom) => {
     onClassroomSelect?.(classroom);
+    // Persist selection globally
+    setSelectedClassroom(classroom as any);
     router.push('/(tabs)/(drawer)/estudia');
   };
 
