@@ -2,7 +2,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface CreateClassroomProps {
   onSuccess?: (classroom: any) => void;
@@ -128,7 +128,12 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>✨ Crear Nuevo Salón</Text>
       <Text style={styles.subtitle}>Configura tu salón de estudio colaborativo</Text>
 
@@ -205,15 +210,18 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
         <Text style={styles.infoText}>• Comparte el código con tus compañeros</Text>
         <Text style={styles.infoText}>• Serás el administrador del salón</Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#0a0a0a',
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
   },
   title: {
     fontSize: 24,

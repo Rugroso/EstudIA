@@ -1,6 +1,7 @@
 import JoinClassroom from '@/components/join-classroom';
+import { ScrollableTabView } from '@/components/scrollable-tab-view';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export default function JoinClassroomPage() {
   const handleSuccess = (classroom: any) => {
@@ -12,12 +13,12 @@ export default function JoinClassroomPage() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollableTabView contentContainerStyle={styles.container}>
       <JoinClassroom 
         onSuccess={handleSuccess}
         onCancel={handleCancel}
       />
-    </View>
+    </ScrollableTabView>
   );
 }
 

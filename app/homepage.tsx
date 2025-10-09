@@ -1,6 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/context/AuthContext';
+import { useClassroom } from '@/context/ClassroomContext';
 import { Redirect, router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -15,9 +16,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
       const scaleAnim = useRef(new Animated.Value(1)).current;
       
       const { logout, loading } = useAuth();
+      const { getSavedClassroomId, currentClassroom } = useClassroom();
 
-      const handleEnterClass = () => {
-        animateTransition(() => setEnterClass(true));
+      const handleEnterClass = async () => {
+        try {
+          // Intentar cargar el último salón guardado
+          const savedClassroomId = await getSavedClassroomId();
+          console.log('Saved classroom ID:', savedClassroomId);
+          
+          if (savedClassroomId) {
+            animateTransition(() => {
+              router.push(`/(tabs)/(drawer)/overview` as any);
+            });
+          } else {
+            // Si no hay salón guardado, mostrar la lista de salones
+            animateTransition(() => setVerSalon(true));
+          }
+        } catch (error) {
+          console.error('Error loading saved classroom:', error);
+          // Fallback a la lista de salones
+          animateTransition(() => setVerSalon(true));
+        }
       };
 
       const handleUnirseSalon = () => {
@@ -75,6 +94,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
       };
 
       if (enterClass) {
+        // Este redirect ya no se usará, pero lo mantenemos como fallback
         return <Redirect href="/(tabs)/(drawer)/overview" />;
       }
       if (unirseSalon) {
@@ -121,8 +141,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
                   </View>
                   <View style={styles.cardContent}>
                     <Text style={styles.cardTitle}>Ir a Salón</Text>
-                    <Text style={styles.cardSubtitle}>Matemáticas Avanzadas</Text>
-                    <Text style={styles.cardDescription}>Continúa estudiando en tu salón actual</Text>
+                    <Text style={styles.cardSubtitle}>
+                      {currentClassroom ? currentClassroom.name : 'Último salón visitado'}
+                    </Text>
+                    <Text style={styles.cardDescription}>
+                      {currentClassroom 
+                        ? `${currentClassroom.subject} • Continúa estudiando` 
+                        : 'Ve a tu último salón o elige uno nuevo'
+                      }
+                    </Text>
                   </View>
                   <View style={styles.cardArrow}>
                     <Text style={styles.arrowText}>→</Text>

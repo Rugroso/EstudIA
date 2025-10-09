@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
+import { useClassroom } from '@/context/ClassroomContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -13,6 +14,7 @@ import {
   Text,
   View
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Classroom {
   id: string;
@@ -34,6 +36,7 @@ interface MyClassroomProps {
 
 export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
   const { user } = useAuth(); 
+  const { setCurrentClassroom } = useClassroom();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -136,9 +139,33 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
     setIsRefreshing(false);
   };
 
-  const handleClassroomPress = (classroom: Classroom) => {
-    onClassroomSelect?.(classroom);
-    router.push('/(tabs)/(drawer)/estudia');
+  const handleClassroomPress = async (classroom: Classroom) => {
+    try {
+      // Salon actual
+      await AsyncStorage.setItem('currentClassroomId', classroom.id);
+      
+      // Actualizar el contexto
+      setCurrentClassroom({
+        id: classroom.id,
+        name: classroom.name,
+        subject: classroom.subject,
+        description: classroom.description,
+        code: classroom.code,
+        created_by: classroom.created_by,
+        is_active: classroom.is_active,
+        created_at: classroom.created_at,
+      });
+
+      // Navegar usando ruta dinámica
+      router.push(`/(tabs)/(drawer)/overview` as any);
+      
+      if (onClassroomSelect) {
+        onClassroomSelect(classroom);
+      }
+    } catch (error) {
+      console.error('Error entering classroom:', error);
+      showAlert('Error', 'No se pudo acceder al salón');
+    }
   };
 
   const handleLeaveClassroom = async (classroom: Classroom) => {

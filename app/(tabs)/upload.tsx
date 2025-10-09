@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import UploadText from '@/components/upload-text';
+import { useTabBarHeight } from '@/hooks/use-tab-bar-height';
 import { router } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
@@ -20,6 +21,7 @@ import { decode as base64ToArrayBuffer } from 'base64-arraybuffer';
 
 export default function ModalScreen() {
   const insets = useSafeAreaInsets();
+  const { scrollViewInset } = useTabBarHeight();
   const { height: winH } = useWindowDimensions();
   const [uploading, setUploading] = useState(false);
   const [lastUpload, setLastUpload] = useState<string | null>(null);
@@ -334,6 +336,7 @@ export default function ModalScreen() {
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#EEF2FF', dark: '#0B1020' }}
+      {...scrollViewInset}
       headerImage={
         <View style={styles.headerContainer}>
           <Image

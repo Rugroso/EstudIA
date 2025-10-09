@@ -1,6 +1,7 @@
 import CreateClassroom from '@/components/create-classroom';
+import { ScrollableTabView } from '@/components/scrollable-tab-view';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export default function CreateClassroomPage() {
   const handleSuccess = (classroom: any) => {
@@ -13,12 +14,12 @@ export default function CreateClassroomPage() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollableTabView contentContainerStyle={styles.container}>
       <CreateClassroom 
         onSuccess={handleSuccess}
         onCancel={handleCancel}
       />
-    </View>
+    </ScrollableTabView>
   );
 }
 

@@ -2,7 +2,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface JoinClassroomProps {
   onSuccess?: (classroom: any) => void;
@@ -94,7 +94,6 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
     setIsLoading(true);
 
     try {
-      // Obtener el usuario actual (por ahora usamos un ID temporal)
       const userId = user?.id; // Usuario autenticado
       
       // Verificar si el usuario ya es miembro
