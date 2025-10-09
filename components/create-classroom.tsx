@@ -2,6 +2,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { useClassroom } from '@/context/ClassroomContext';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface CreateClassroomProps {
@@ -15,6 +16,8 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { getSavedClassroomId, currentClassroom } = useClassroom();
+  
 
     const showAlert = (title: string, message: string, buttons?: Array<{text: string, onPress?: () => void, style?: 'default' | 'cancel' | 'destructive'}>) => {
       if (Platform.OS === 'web') {
@@ -94,9 +97,10 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
           },
           {
             text: 'Ir al Salón',
-            onPress: () => {
+            onPress: async () => {
               onSuccess?.(classroom);
-              router.push('/(tabs)/(drawer)/estudia');
+              const savedClassroomId = await getSavedClassroomId();
+              router.push('/(tabs)/(drawer)/overview');
             }
           }
         ]

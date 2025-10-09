@@ -1,6 +1,7 @@
 import MyClassroom from '@/components/my-classroom';
 import { useRouter } from 'expo-router';
 import { Button, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 
 export default function MyClassroomScreen() {
     const router = useRouter();
@@ -8,7 +9,7 @@ export default function MyClassroomScreen() {
         router.push('/');
     };
         return (
-            <View >
+            <ScrollView>
                 
                 <Button
                     title="Volver al Inicio"
@@ -19,7 +20,7 @@ export default function MyClassroomScreen() {
                     onClassroomSelect={() => console.log('Leave class')}
                 />
                 
-            </View>
+            </ScrollView>
             
         );
     }
