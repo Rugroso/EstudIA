@@ -1,10 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
+import { useClassroom } from '@/context/ClassroomContext';
 import React, { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { IconSymbol } from './ui/icon-symbol';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+// Prefer the Supabase Edge Function 'embedding' if deployed
 const EMBEDDING_URL = process.env.EXPO_PUBLIC_EMBEDDING_URL ?? '';
 const CHAT_URL = process.env.EXPO_PUBLIC_CHAT_URL ?? '';
 
@@ -16,7 +18,7 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
-  const supabase = useMemo(() => createClient(SUPABASE_URL, SUPABASE_ANON), []);
+  const { selectedClassroom } = useClassroom();
 
   const toastError = (message = 'Something went wrong') => {
     // simple alert para web; si usas algún toast, reemplaza aquí
@@ -42,23 +44,35 @@ export default function SearchScreen() {
 
     try {
       console.log('📡 Haciendo request de embedding...');
-      const er = await fetch(EMBEDDING_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: q.replace(/\n/g, ' ') }),
-      });
-
-      console.log('📥 Respuesta embedding status:', er.status);
-      if (!er.ok) {
-        toastError(`Embedding HTTP ${er.status}`);
+      let embedding: number[] | null = null;
+      try {
+        // If a custom EMBEDDING_URL is configured, use it; otherwise use the Supabase Edge Function
+        if (EMBEDDING_URL) {
+          const er = await fetch(EMBEDDING_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: q.replace(/\n/g, ' ') }),
+          });
+          console.log('📥 Respuesta embedding status:', er.status);
+          if (!er.ok) throw new Error(`Embedding HTTP ${er.status}`);
+          const ejson = await er.json();
+          console.log('🔢 Respuesta embedding JSON:', ejson);
+          embedding = ejson.embedding ?? ejson?.data?.[0]?.embedding ?? null;
+        } else {
+          const { data, error } = await supabase.functions.invoke('embedding', {
+            body: { text: q.replace(/\n/g, ' ') },
+          });
+          if (error) throw error;
+          console.log('🔢 Respuesta embedding JSON (edge function):', data);
+          embedding = data?.embedding ?? data?.data?.[0]?.embedding ?? null;
+        }
+      } catch (embErr: any) {
+        console.error('❌ Error embedding:', embErr);
+        toastError(embErr?.message ?? 'No pude crear embedding');
         setAnswers((prev) => [...prev, 'Error creando embedding.']);
         setLoading(false);
         return;
       }
-
-      const ejson = await er.json();
-      console.log('🔢 Respuesta embedding JSON:', ejson);
-      const embedding: number[] = ejson.embedding ?? ejson?.data?.[0]?.embedding;
 
       if (!embedding || !Array.isArray(embedding)) {
         toastError('Respuesta de embedding inválida');
@@ -67,11 +81,18 @@ export default function SearchScreen() {
         return;
       }
 
-      // 2) buscar documentos similares mediante RPC en Supabase
-      // Asegúrate que la RPC "match_documents" existe y su firma coincide
-      console.log('🗃️ Buscando documentos en Supabase...');
-      const { data: documents, error: rpcError } = await supabase.rpc('match_documents', {
+      if (!selectedClassroom?.id) {
+        toastError('Selecciona un salón primero');
+        setAnswers((prev) => [...prev, 'Selecciona un salón primero.']);
+        setLoading(false);
+        return;
+      }
+
+      // 2) buscar chunks por salón
+      console.log('🗃️ Buscando documentos en Supabase por salón...');
+      const { data: documents, error: rpcError } = await supabase.rpc('match_classroom_chunks', {
         query_embedding: embedding,
+        class_id: selectedClassroom.id,
         match_threshold: 0.3,
         match_count: 10,
       });

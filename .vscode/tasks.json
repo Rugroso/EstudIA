@@ -54,6 +54,17 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Lint - EstudIA",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"lint"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

@@ -1,0 +1,11 @@
+{
+  "lock": false,
+  "tasks": {},
+  "imports": {
+    "supabase": "jsr:@supabase/supabase-js@2"
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom", "deno.unstable"],
+    "strict": true
+  }
+}

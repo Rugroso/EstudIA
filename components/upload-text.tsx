@@ -1,5 +1,7 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { createClient } from '@supabase/supabase-js';
+import { useClassroom } from '@/context/ClassroomContext';
+import { supabase as supabaseSess } from '@/lib/supabase';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -7,6 +9,7 @@ export default function UploadText() {
   const [content, setContent] = useState('');
   const [out, setOut] = useState('');
   const [loading, setLoading] = useState(false);
+  const { selectedClassroom } = useClassroom();
 
   const supabase = useMemo(() => {
     const url = process.env.EXPO_PUBLIC_SUPABASE_URL!;
@@ -16,32 +19,53 @@ export default function UploadText() {
     return createClient(url, anon);
   }, []);
 
-  const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
-  const EMBEDDING_URL = `${API_BASE}/embedding`;
-
   const handleSubmit = async () => {
     setLoading(true);
     setOut('');
     try {
-      const r = await fetch(EMBEDDING_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: content }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-      const embedding: number[] = Array.isArray(data?.embedding) ? data.embedding : [];
-
-      const { error } = await supabase.from('documents').insert({
-        content,
-        embedding,
-      });
-      if (error) {
-        alert('Error creating embedding: ' + error.message);
-      } else {
-        alert('Successfully created embedding.');
+      if (!selectedClassroom?.id) {
+        alert('Primero selecciona un salón en Mis salones.');
+        setLoading(false);
+        return;
       }
-      setOut(JSON.stringify(data));
+      const { data: user } = await supabaseSess.auth.getUser();
+      if (!user?.user?.id) {
+        alert('Debes iniciar sesión.');
+        setLoading(false);
+        return;
+      }
+
+      // Inserta un documento inline en classroom_documents; el procesador creará chunks/embeddings
+      const { data: doc, error: docErr } = await supabaseSess
+        .from('classroom_documents')
+        .insert([
+          {
+            classroom_id: selectedClassroom.id,
+            owner_user_id: user.user.id,
+            bucket: 'inline',
+            storage_path: null,
+            original_filename: null,
+            mime_type: 'text/plain',
+            size_bytes: content.length,
+            text_excerpt: content,
+            status: 'uploaded',
+          }
+        ])
+        .select('*')
+        .single();
+      if (docErr) throw docErr;
+
+      // Disparar el procesamiento vía Supabase Edge Functions (requiere función desplegada)
+      if (doc?.id) {
+        try {
+          await supabaseSess.functions.invoke('process-classroom-document', {
+            body: { document_id: doc.id },
+          });
+        } catch {}
+      }
+
+  alert('Texto enviado. Se procesará para embeddings.');
+  setOut(doc ? `Documento ${doc.id} creado y procesándose...` : 'Documento creado.');
     } catch (e: any) {
       setOut(`Error: ${e?.message ?? 'request failed'}`);
     } finally {
