@@ -1,30 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
 import React, { useMemo, useRef, useState } from 'react';
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { IconSymbol } from './ui/icon-symbol';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { useTabBarHeight } from '@/hooks/use-tab-bar-height';
-import { ThemedText } from './themed-text';
-import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 const EMBEDDING_URL = process.env.EXPO_PUBLIC_EMBEDDING_URL ?? '';
 const CHAT_URL = process.env.EXPO_PUBLIC_CHAT_URL ?? '';
 
+// ============ UI ============
 export default function SearchScreen() {
   const [text, setText] = useState('');
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const { scrollViewInset } = useTabBarHeight();
 
   const supabase = useMemo(() => createClient(SUPABASE_URL, SUPABASE_ANON), []);
 
   const toastError = (message = 'Something went wrong') => {
+    // simple alert para web; si usas algún toast, reemplaza aquí
     alert('hola ' + message);
   };
 
@@ -72,7 +67,8 @@ export default function SearchScreen() {
         return;
       }
 
-
+      // 2) buscar documentos similares mediante RPC en Supabase
+      // Asegúrate que la RPC "match_documents" existe y su firma coincide
       console.log('🗃️ Buscando documentos en Supabase...');
       const { data: documents, error: rpcError } = await supabase.rpc('match_documents', {
         query_embedding: embedding,
@@ -143,7 +139,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <ScrollView>
+    <View style={styles.container}>
       {/* Lista Q/A */}
       <View>
         <Text style={styles.title}>
@@ -168,7 +164,9 @@ export default function SearchScreen() {
             </View>
           );
         })}
-        <View style={styles.inputBar}>
+      </ScrollView>
+
+      <View style={styles.inputBar}>
         <TextInput
           ref={inputRef}
           value={text}
@@ -187,10 +185,7 @@ export default function SearchScreen() {
           )}
         </Pressable>
       </View>
-      </ScrollView>
-
-
-    </ScrollView>
+    </View>
   );
 }
 

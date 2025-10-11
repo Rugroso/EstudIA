@@ -1,20 +1,14 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { createClient } from '@supabase/supabase-js';
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { supabase } from '@/lib/supabase';
+import { useClassroom } from '@/context/ClassroomContext';
 
 export default function UploadText() {
   const [content, setContent] = useState('');
   const [out, setOut] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const supabase = useMemo(() => {
-    const url = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-    const anon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
-    if (!url) throw new Error('Falta EXPO_PUBLIC_SUPABASE_URL');
-    if (!anon) throw new Error('Falta EXPO_PUBLIC_SUPABASE_ANON_KEY');
-    return createClient(url, anon);
-  }, []);
+  const { selectedClassroom } = useClassroom();
 
   const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
   const EMBEDDING_URL = `${API_BASE}/embedding`;
@@ -23,6 +17,18 @@ export default function UploadText() {
     setLoading(true);
     setOut('');
     try {
+      // Validar salón seleccionado
+      if (!selectedClassroom?.id) {
+        Alert.alert('Selecciona un salón', 'Ve a Mis salones y elige uno antes de subir texto.');
+        return;
+      }
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      if (!userId) {
+        Alert.alert('Sesión requerida', 'Inicia sesión para subir contenido.');
+        return;
+      }
+
       const r = await fetch(EMBEDDING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,6 +38,7 @@ export default function UploadText() {
       const data = await r.json();
       const embedding: number[] = Array.isArray(data?.embedding) ? data.embedding : [];
 
+      // 1) Guardar también en tabla global de embeddings
       const { error } = await supabase.from('documents').insert({
         content,
         embedding,
@@ -40,6 +47,36 @@ export default function UploadText() {
         alert('Error creating embedding: ' + error.message);
       } else {
         alert('Successfully created embedding.');
+      }
+
+      // 2) Registrar metadata en classroom_documents para este salón
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      let sizeBytes: number | null = null;
+      try {
+        // Disponible en RN y Web
+        // @ts-ignore
+        sizeBytes = new Blob([content]).size ?? null;
+      } catch {}
+      const syntheticPath = `${userId}/${stamp}-rawtext.txt`;
+      const textExcerpt = content.length > 280 ? content.slice(0, 277) + '…' : content;
+      const { error: metaErr } = await supabase.from('classroom_documents').insert([
+        {
+          classroom_id: selectedClassroom.id,
+          owner_user_id: userId,
+          // bucket default = 'uploads'
+          storage_path: syntheticPath,
+          original_filename: 'raw-text.txt',
+          mime_type: 'text/plain',
+          size_bytes: sizeBytes,
+          title: 'Texto pegado',
+          text_excerpt: textExcerpt,
+          status: 'ready',
+          embedding_model: 'external',
+          embedding_ready: true,
+        },
+      ]);
+      if (metaErr) {
+        console.warn('No se pudo registrar en classroom_documents:', metaErr.message);
       }
       setOut(JSON.stringify(data));
     } catch (e: any) {

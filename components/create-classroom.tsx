@@ -2,8 +2,8 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useClassroom } from '@/context/ClassroomContext';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface CreateClassroomProps {
   onSuccess?: (classroom: any) => void;
@@ -12,12 +12,11 @@ interface CreateClassroomProps {
 
 export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroomProps) {
   const { user } = useAuth();
+  const { setSelectedClassroom } = useClassroom();
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { getSavedClassroomId, currentClassroom } = useClassroom();
-  
 
     const showAlert = (title: string, message: string, buttons?: Array<{text: string, onPress?: () => void, style?: 'default' | 'cancel' | 'destructive'}>) => {
       if (Platform.OS === 'web') {
@@ -97,10 +96,10 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
           },
           {
             text: 'Ir al Salón',
-            onPress: async () => {
+            onPress: () => {
               onSuccess?.(classroom);
-              const savedClassroomId = await getSavedClassroomId();
-              router.push('/(tabs)/(drawer)/overview');
+              setSelectedClassroom(classroom as any);
+              router.push('/(tabs)/(drawer)/estudia');
             }
           }
         ]
@@ -132,12 +131,7 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
   };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
+    <View style={styles.container}>
       <Text style={styles.title}>✨ Crear Nuevo Salón</Text>
       <Text style={styles.subtitle}>Configura tu salón de estudio colaborativo</Text>
 
@@ -214,18 +208,15 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
         <Text style={styles.infoText}>• Comparte el código con tus compañeros</Text>
         <Text style={styles.infoText}>• Serás el administrador del salón</Text>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
-  },
-  scrollContent: {
     padding: 20,
-    paddingBottom: 40,
+    backgroundColor: '#0a0a0a',
   },
   title: {
     fontSize: 24,
