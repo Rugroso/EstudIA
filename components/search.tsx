@@ -209,50 +209,61 @@ function generatePrompt(contextText: string, searchText: string) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18181b',
-    padding: 16,
+    backgroundColor: '#0A0A0F',
+    padding: 20,
   },
   title: { 
-    color: 'white', 
-    fontSize: 20, 
+    color: '#FFFFFF', 
+    fontSize: 24, 
     fontWeight: '700', 
-    marginBottom: 12 
+    marginBottom: 16,
+    letterSpacing: -0.5,
   },
-  qIcon: { color: '#818cf8', 
+  qIcon: { 
+    color: '#6366F1', 
     fontWeight: '800', 
-    marginRight: 6 
+    marginRight: 8 
   },
-  qText: { color: '#c7d2fe', 
+  qText: { 
+    color: 'rgba(255, 255, 255, 0.9)', 
     fontSize: 16, 
-    flexShrink: 1 
+    flexShrink: 1,
+    lineHeight: 24,
   },
-  loading: 
-  { color: '#9ca3af' 
+  loading: { 
+    color: 'rgba(255, 255, 255, 0.6)' 
   },
-  aText: { color: '#e5e7eb', 
-    lineHeight: 20 
+  aText: { 
+    color: 'rgba(255, 255, 255, 0.9)', 
+    lineHeight: 24 
   },
   inputBar: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
     alignItems: 'center',
   },
   input: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 52,
     maxHeight: 160,
     borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 12,
-    padding: 12,
-    color: 'white', 
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    backgroundColor: 'rgba(99, 102, 241, 0.05)',
+    borderRadius: 16,
+    padding: 16,
+    color: '#FFFFFF',
+    fontSize: 15,
   },
   button: {
-    backgroundColor: '#4f46e5',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    backgroundColor: '#6366F1',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
   sendBtn: {},
-  buttonText: { color: 'white', fontWeight: '700' },
+  buttonText: { 
+    color: '#FFFFFF', 
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });

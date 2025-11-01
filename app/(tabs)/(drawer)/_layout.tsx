@@ -48,18 +48,21 @@ export default function DrawerLayout() {
   return (
     <Drawer
       screenOptions={{
-        drawerActiveTintColor: Colors.dark.tint,
-        drawerInactiveTintColor: Colors.dark.text,
+        drawerActiveTintColor: '#6366F1',
+        drawerInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
         drawerStyle: {
-          backgroundColor: Colors.dark.background,
+          backgroundColor: '#0A0A0F',
         },
         headerStyle: {
-          backgroundColor: Colors.dark.background,
+          backgroundColor: '#0A0A0F',
+          borderBottomWidth: 1,
+          borderBottomColor: 'rgba(99, 102, 241, 0.2)',
         },
-        headerTintColor: Colors.dark.text,
+        headerTintColor: '#FFFFFF',
         headerTitle: headerTitle,
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: '700',
+          fontSize: 18,
         },
       }}>
       <Drawer.Screen
@@ -99,9 +102,15 @@ export default function DrawerLayout() {
         }}
       />
       <Drawer.Screen
+        name="cubicleChat"
+        options={{
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
+      <Drawer.Screen
         name="[classroomId]"
         options={{
-          drawerItemStyle: { display: 'none' }, // Ocultar en drawer ya que es dinámico
+          drawerItemStyle: { display: 'none' }, 
         }}
       />
     </Drawer>

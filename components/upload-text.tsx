@@ -1,28 +1,33 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { createClient } from '@supabase/supabase-js';
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { supabase } from '@/lib/supabase';
+import { useClassroom } from '@/context/ClassroomContext';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View, Alert } from 'react-native';
 
 export default function UploadText() {
   const [content, setContent] = useState('');
   const [out, setOut] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const supabase = useMemo(() => {
-    const url = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-    const anon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
-    if (!url) throw new Error('Falta EXPO_PUBLIC_SUPABASE_URL');
-    if (!anon) throw new Error('Falta EXPO_PUBLIC_SUPABASE_ANON_KEY');
-    return createClient(url, anon);
-  }, []);
+  const { currentClassroom } = useClassroom();
 
   const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
   const EMBEDDING_URL = `${API_BASE}/embedding`;
 
   const handleSubmit = async () => {
+    if (!currentClassroom) {
+      Alert.alert('Error', 'Debes seleccionar un salón primero');
+      return;
+    }
+
+    if (!content.trim()) {
+      Alert.alert('Error', 'Debes escribir algo de texto');
+      return;
+    }
+
     setLoading(true);
     setOut('');
     try {
+      // 1. Generar embedding
       const r = await fetch(EMBEDDING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,18 +37,35 @@ export default function UploadText() {
       const data = await r.json();
       const embedding: number[] = Array.isArray(data?.embedding) ? data.embedding : [];
 
+      // 2. Obtener usuario actual
+      const { data: userData } = await supabase.auth.getUser();
+
+      // 3. Guardar en documents con referencia al salón
       const { error } = await supabase.from('documents').insert({
-        content,
+        classroom_id: currentClassroom.id,
+        user_id: userData?.user?.id,
+        content: content.trim(),
         embedding,
+        file_type: 'text',
+        file_name: `Texto - ${new Date().toLocaleDateString()}`,
+        metadata: {
+          length: content.length,
+          createdAt: new Date().toISOString(),
+        },
       });
+
       if (error) {
-        alert('Error creating embedding: ' + error.message);
+        Alert.alert('Error', 'Error creando embedding: ' + error.message);
+        setOut('Error: ' + error.message);
       } else {
-        alert('Successfully created embedding.');
+        Alert.alert('¡Éxito!', 'Embedding creado y guardado correctamente');
+        setContent(''); // Limpiar el contenido
+        setOut('✅ Embedding generado exitosamente para el salón: ' + currentClassroom.name);
       }
-      setOut(JSON.stringify(data));
     } catch (e: any) {
-      setOut(`Error: ${e?.message ?? 'request failed'}`);
+      const errorMsg = `Error: ${e?.message ?? 'request failed'}`;
+      setOut(errorMsg);
+      Alert.alert('Error', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -84,33 +106,41 @@ export default function UploadText() {
 
 const styles = StyleSheet.create({
   container: { 
-    gap: 8, 
-    paddingTop: 4,
+    gap: 12, 
+    paddingTop: 8,
   },
-  label: { fontSize: 16, 
-    fontWeight: '600', 
-    color: '#ccc' 
+  label: { 
+    fontSize: 18, 
+    fontWeight: '700', 
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   textarea: {
-    color: '#ccc',
+    color: '#FFFFFF',
     minHeight: 140,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: 12,
-    padding: 12,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    backgroundColor: 'rgba(99, 102, 241, 0.05)',
+    borderRadius: 16,
+    padding: 16,
     fontSize: 16,
+    lineHeight: 24,
   },
   sendButton: {
     alignSelf: 'flex-end',
-    backgroundColor: '#4f46e5',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    backgroundColor: '#6366F1',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
   buttonText: { 
-    color: 'white', 
-    fontWeight: '700' 
+    color: '#FFFFFF', 
+    fontWeight: '700',
+    fontSize: 15,
   },
-  counter: { alignSelf: 'flex-end', color: '#9ca3af' },
+  counter: { 
+    alignSelf: 'flex-end', 
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 13,
+  },
 });

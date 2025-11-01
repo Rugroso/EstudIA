@@ -28,35 +28,35 @@ export default function EstudiaScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    padding: 16,
-    backgroundColor: '#18181b'
+    padding: 20,
+    backgroundColor: '#0A0A0F'
   },
   header: {
-    marginBottom: 24,
-    paddingBottom: 16,
+    marginBottom: 32,
+    paddingBottom: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: 'rgba(99, 102, 241, 0.2)',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#007AFF',
-    opacity: 0.8,
+    color: 'rgba(255, 255, 255, 0.6)',
   },
   noClassroom: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#0A0A0F',
   },
   noClassroomText: {
     fontSize: 18,
-    color: '#fff',
-    opacity: 0.6,
+    color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
   },
 });

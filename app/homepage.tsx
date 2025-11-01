@@ -1,408 +1,470 @@
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { useAuth } from '@/context/AuthContext';
-import { useClassroom } from '@/context/ClassroomContext';
-import { Redirect, router } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+"use client"
+import { useAuth } from "@/context/AuthContext"
+import { useClassroom } from "@/context/ClassroomContext"
+import { Redirect, router } from "expo-router"
+import { useRef, useState } from "react"
+import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { LinearGradient } from "expo-linear-gradient"
 
-    export default function Homepage() {
-      const [enterClass, setEnterClass] = useState(false);
-      const [unirseSalon, setUnirseSalon] = useState(false);
-      const [crearSalon, setCrearSalon] = useState(false);
-      const [verSalon, setVerSalon] = useState(false);
-      const fadeAnim = useRef(new Animated.Value(1)).current;
-      const scaleAnim = useRef(new Animated.Value(1)).current;
-      
-      const { logout, loading } = useAuth();
-      const { getSavedClassroomId, currentClassroom } = useClassroom();
+export default function Homepage() {
+  const [enterClass, setEnterClass] = useState(false)
+  const [unirseSalon, setUnirseSalon] = useState(false)
+  const [crearSalon, setCrearSalon] = useState(false)
+  const [verSalon, setVerSalon] = useState(false)
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const slideAnim = useRef(new Animated.Value(50)).current
 
-      const handleEnterClass = async () => {
-        try {
-          // Intentar cargar el último salón guardado
-          const savedClassroomId = await getSavedClassroomId();
-          console.log('Saved classroom ID:', savedClassroomId);
-          
-          if (savedClassroomId) {
-            animateTransition(() => {
-              router.push(`/(tabs)/(drawer)/overview` as any);
-            });
-          } else {
-            // Si no hay salón guardado, mostrar la lista de salones
-            animateTransition(() => setVerSalon(true));
+  const { logout, loading } = useAuth()
+  const { getSavedClassroomId, currentClassroom } = useClassroom()
+
+  useState(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start()
+  })
+
+  const handleEnterClass = async () => {
+    try {
+      const savedClassroomId = await getSavedClassroomId()
+
+      if (savedClassroomId) {
+        router.push(`/(tabs)/(drawer)/overview` as any)
+      } else {
+        setVerSalon(true)
+      }
+    } catch (error) {
+      console.error("Error loading saved classroom:", error)
+      setVerSalon(true)
+    }
+  }
+
+  const handleUnirseSalon = () => {
+    setUnirseSalon(true)
+  }
+
+  const handleCrearSalon = () => {
+    setCrearSalon(true)
+  }
+
+  const handleVerSalon = () => {
+    setVerSalon(true)
+  }
+
+  const handleLogout = async () => {
+    Alert.alert("Cerrar sesión", "¿Estás seguro que deseas cerrar sesión?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Cerrar sesión",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await logout()
+            router.replace("/login")
+          } catch (error) {
+            Alert.alert("Error", "No se pudo cerrar sesión")
           }
-        } catch (error) {
-          console.error('Error loading saved classroom:', error);
-          // Fallback a la lista de salones
-          animateTransition(() => setVerSalon(true));
-        }
-      };
+        },
+      },
+    ])
+  }
 
-      const handleUnirseSalon = () => {
-        animateTransition(() => setUnirseSalon(true));
-      };
+  if (enterClass) {
+    return <Redirect href="/(tabs)/(drawer)/overview" />
+  }
+  if (unirseSalon) {
+    return <Redirect href="/classroom/join" />
+  }
+  if (crearSalon) {
+    return <Redirect href="/classroom/create" />
+  }
+  if (verSalon) {
+    return <Redirect href="/classroom/myClassroom" />
+  }
 
-      const handleCrearSalon = () => {
-        animateTransition(() => setCrearSalon(true));
-      };
-
-      const handleVerSalon = () => {
-        animateTransition(() => setVerSalon(true));
-      }
-
-      const animateTransition = (callback: () => void) => {
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 0.9,
-            duration: 300,
-            useNativeDriver: true,
-          })
-        ]).start(() => {
-          callback();
-        });
-      };
-
-      const handleLogout = async () => {
-        Alert.alert(
-          "Cerrar sesión",
-          "¿Estás seguro que deseas cerrar sesión?",
-          [
-            {
-              text: "Cancelar",
-              style: "cancel"
-            },
-            {
-              text: "Cerrar sesión",
-              style: "destructive",
-              onPress: async () => {
-                try {
-                  await logout();
-                  router.replace("/login");
-                } catch (error) {
-                  Alert.alert("Error", "No se pudo cerrar sesión");
-                }
-              }
-            }
-          ]
-        );
-      };
-
-      if (enterClass) {
-        // Este redirect ya no se usará, pero lo mantenemos como fallback
-        return <Redirect href="/(tabs)/(drawer)/overview" />;
-      }
-      if (unirseSalon) {
-        return <Redirect href="/classroom/join" />;
-      }
-      if (crearSalon) {
-        return <Redirect href="/classroom/create" />;
-      }
-      if (verSalon) {
-        return <Redirect href="/classroom/myClassroom" />;
-      }
-
-      return (
-        <Animated.View style={[{ opacity: fadeAnim, transform: [{ scale: scaleAnim }], flex: 1, backgroundColor: '#000' }]}>
-          <SafeAreaView style={{ flex: 1 }}>
-          <ScrollView style={styles.container}>
-            <ThemedView style={styles.content}>
-              <ThemedView style={styles.header}>
-                <Text style={styles.title}>🎓 EstudIA</Text>
-                <Text style={styles.subtitle}>
-                  App colaborativa de estudio con IA
-                </Text>
-                <View style={styles.headerDivider} />
-              </ThemedView>
-
-              <ThemedView style={styles.welcomeCard}>
-                <ThemedText style={styles.welcomeText}>
-                  ¡Bienvenido! Elige cómo quieres comenzar tu sesión de estudio:
-                </ThemedText>
-              </ThemedView>
-
-              <ThemedView style={styles.cardsContainer}>
-                {/* Card para entrar a salón existente */}
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.card,
-                    styles.studyCard,
-                    { transform: [{ scale: pressed ? 0.98 : 1 }] }
-                  ]}
-                  onPress={handleEnterClass}
-                >
-                  <View style={styles.cardIcon}>
-                    <Text style={styles.iconText}>📚</Text>
+  return (
+    <View style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <Animated.View
+            style={[
+              styles.content,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <View style={styles.logoIcon}>
+                  <Text style={styles.logoEmoji}>🎓</Text>
+                  <View style={styles.aiIndicator}>
+                    <Text style={styles.aiText}>AI</Text>
                   </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle}>Ir a Salón</Text>
-                    <Text style={styles.cardSubtitle}>
-                      {currentClassroom ? currentClassroom.name : 'Último salón visitado'}
-                    </Text>
-                    <Text style={styles.cardDescription}>
-                      {currentClassroom 
-                        ? `${currentClassroom.subject} • Continúa estudiando` 
-                        : 'Ve a tu último salón o elige uno nuevo'
-                      }
-                    </Text>
-                  </View>
-                  <View style={styles.cardArrow}>
-                    <Text style={styles.arrowText}>→</Text>
-                  </View>
-                </Pressable>
-
-                {/* Card para unirse a salón */}
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.card,
-                    styles.joinCard,
-                    { transform: [{ scale: pressed ? 0.98 : 1 }] }
-                  ]}
-                  onPress={handleUnirseSalon}
-                >
-                  <View style={styles.cardIcon}>
-                    <Text style={styles.iconText}>🚪</Text>
-                  </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle}>Unirse a Salón</Text>
-                    <Text style={styles.cardSubtitle}>Código de invitación</Text>
-                    <Text style={styles.cardDescription}>Únete a un salón existente con código</Text>
-                  </View>
-                  <View style={styles.cardArrow}>
-                    <Text style={styles.arrowText}>→</Text>
-                  </View>
-                </Pressable>
-
-                {/* Card para crear salón */}
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.card,
-                    styles.createCard,
-                    { transform: [{ scale: pressed ? 0.98 : 1 }] }
-                  ]}
-                  onPress={handleCrearSalon}
-                >
-                  <View style={styles.cardIcon}>
-                    <Text style={styles.iconText}>✨</Text>
-                  </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle}>Crear Salón</Text>
-                    <Text style={styles.cardSubtitle}>Nuevo salón de estudio</Text>
-                    <Text style={styles.cardDescription}>Crea tu propio salón colaborativo</Text>
-                  </View>
-                  <View style={styles.cardArrow}>
-                    <Text style={styles.arrowText}>→</Text>
-                  </View>
-                </Pressable>
-
-                {/* Card para ver salón */}
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.card,
-                    styles.createCard,
-                    { transform: [{ scale: pressed ? 0.98 : 1 }] }
-                  ]}
-                  onPress={handleVerSalon}
-                >
-                  <View style={styles.cardIcon}>
-                    <Text style={styles.iconText}>✨</Text>
-                  </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle}>Lista de salones</Text>
-                    <Text style={styles.cardSubtitle}>Salones disponibles</Text>
-                    <Text style={styles.cardDescription}>Explora los salones a los que puedes unirte</Text>
-                  </View>
-                  <View style={styles.cardArrow}>
-                    <Text style={styles.arrowText}>→</Text>
-                  </View>
-                </Pressable>
-
-              </ThemedView>
-
-              <ThemedView style={styles.footer}>
-                <ThemedText style={styles.footerText}>
-                  Desarrollado con ❤️ para estudiantes
-                </ThemedText>
-              </ThemedView>
-            </ThemedView>
-            
-            {/* Botón de Logout mejorado */}
-            <View style={styles.logoutContainer}>
-              <TouchableOpacity
-                style={styles.logoutButton}
+                </View>
+                <View>
+                  <Text style={styles.title}>EstudIA</Text>
+                  <Text style={styles.subtitle}>Aprende más inteligente</Text>
+                </View>
+              </View>
+              
+              <Pressable
+                style={({ pressed }) => [styles.logoutButton, { opacity: pressed ? 0.7 : 1 }]}
                 onPress={handleLogout}
                 disabled={loading}
               >
                 <Text style={styles.logoutText}>Cerrar sesión</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
-          </ScrollView>
-          </SafeAreaView>
-        </Animated.View>
-      );
-    }
 
-    const styles = StyleSheet.create({
-      container: {
-        flex: 1,
-        backgroundColor: '#000',
-      },
-      content: {
-        flex: 1,
-        padding: 20,
-      },
-      header: {
-        alignItems: 'center',
-        marginBottom: 30,
-        marginTop: 60,
-      },
-      title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        color: '#fff',
-      },
-      subtitle: {
-        fontSize: 16,
-        opacity: 0.8,
-        textAlign: 'center',
-        color: '#fff',
-      },
-      headerDivider: {
-        width: 60,
-        height: 3,
-        backgroundColor: '#007AFF',
-        borderRadius: 2,
-        marginTop: 15,
-      },
-      welcomeCard: {
-        backgroundColor: 'rgba(0, 122, 255, 0.1)',
-        padding: 20,
-        borderRadius: 16,
-        marginBottom: 30,
-        borderWidth: 1,
-        borderColor: 'rgba(0, 122, 255, 0.2)',
-      },
-      welcomeText: {
-        fontSize: 16,
-        textAlign: 'center',
-        lineHeight: 24,
-        color: '#fff',
-      },
-      cardsContainer: {
-        gap: 16,
-      },
-      card: {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: 20,
-        padding: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        shadowColor: '#000',
-        shadowOffset: {
-          width: 0,
-          height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
-      },
-      studyCard: {
-        borderLeftWidth: 4,
-        borderLeftColor: '#007AFF',
-      },
-      joinCard: {
-        borderLeftWidth: 4,
-        borderLeftColor: '#34C759',
-      },
-      createCard: {
-        borderLeftWidth: 4,
-        borderLeftColor: '#FF9500',
-      },
-      cardIcon: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-      },
-      iconText: {
-        fontSize: 24,
-      },
-      cardContent: {
-        flex: 1,
-      },
-      cardTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: 4,
-      },
-      cardSubtitle: {
-        fontSize: 14,
-        color: '#007AFF',
-        fontWeight: '500',
-        marginBottom: 6,
-      },
-      cardDescription: {
-        fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.7)',
-        lineHeight: 20,
-      },
-      cardArrow: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
-      arrowText: {
-        fontSize: 16,
-        color: '#fff',
-        fontWeight: 'bold',
-      },
-      footer: {
-        alignItems: 'center',
-        marginTop: 40,
-        marginBottom: 20,
-      },
-      footerText: {
-        fontSize: 14,
-        opacity: 0.6,
-        textAlign: 'center',
-        color: '#fff',
-      },
-      logoutContainer: {
-        padding: 20,
-        paddingBottom: 30,
-      },
-      logoutButton: {
-        backgroundColor: 'rgba(255, 59, 48, 0.1)',
-        borderRadius: 16,
-        padding: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 59, 48, 0.3)',
-        gap: 10,
-      },
-      logoutIcon: {
-        fontSize: 20,
-      },
-      logoutText: {
-        color: '#FF3B30',
-        fontSize: 16,
-        fontWeight: '600',
-      },
-    });
+            <View style={styles.welcomeSection}>
+              <Text style={styles.welcomeTitle}>¡Hola de nuevo! 👋</Text>
+              <Text style={styles.welcomeDescription}>Continúa tu viaje de aprendizaje o explora nuevos salones</Text>
+            </View>
+
+            <View style={styles.cardsContainer}>
+              {/* Card principal destacada */}
+              {currentClassroom && (
+                <Pressable
+                  style={({ pressed }) => [styles.featuredCard, { opacity: pressed ? 0.9 : 1 }]}
+                  onPress={handleEnterClass}
+                >
+                  <LinearGradient
+                    colors={["#6366F1", "#8B5CF6"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.featuredGradient}
+                  >
+                    <View style={styles.featuredContent}>
+                      <View style={styles.featuredHeader}>
+                        <View style={styles.featuredIconContainer}>
+                          <Text style={styles.featuredIcon}>📚</Text>
+                        </View>
+                        <View style={styles.featuredBadge}>
+                          <Text style={styles.featuredBadgeText}>Continuar</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.featuredTitle}>{currentClassroom.name}</Text>
+                      <Text style={styles.featuredSubject}>{currentClassroom.subject}</Text>
+                      <View style={styles.featuredFooter}>
+                        <Text style={styles.featuredAction}>Ir al salón →</Text>
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              )}
+
+              {/* Grid de acciones rápidas */}
+              <View style={styles.actionsGrid}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.actionCard,
+                    styles.actionCardPrimary,
+                    { transform: [{ scale: pressed ? 0.97 : 1 }] },
+                  ]}
+                  onPress={handleVerSalon}
+                >
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>📖</Text>
+                  </View>
+                  <Text style={styles.actionTitle}>Mis Salones</Text>
+                  <Text style={styles.actionDescription}>Ver todos</Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.actionCard,
+                    styles.actionCardSecondary,
+                    { transform: [{ scale: pressed ? 0.97 : 1 }] },
+                  ]}
+                  onPress={handleCrearSalon}
+                >
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>✨</Text>
+                  </View>
+                  <Text style={styles.actionTitle}>Crear</Text>
+                  <Text style={styles.actionDescription}>Nuevo salón</Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.actionCard,
+                    styles.actionCardTertiary,
+                    { transform: [{ scale: pressed ? 0.97 : 1 }] },
+                  ]}
+                  onPress={handleUnirseSalon}
+                >
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>🚪</Text>
+                  </View>
+                  <Text style={styles.actionTitle}>Unirse</Text>
+                  <Text style={styles.actionDescription}>Con código</Text>
+                </Pressable>
+
+                {!currentClassroom && (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.actionCard,
+                      styles.actionCardQuaternary,
+                      { transform: [{ scale: pressed ? 0.97 : 1 }] },
+                    ]}
+                    onPress={handleEnterClass}
+                  >
+                    <View style={styles.actionIconContainer}>
+                      <Text style={styles.actionIcon}>🎯</Text>
+                    </View>
+                    <Text style={styles.actionTitle}>Explorar</Text>
+                    <Text style={styles.actionDescription}>Descubrir</Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Potenciado por IA • Hecho con ❤️</Text>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#0A0A0F",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  header: {
+    paddingTop: 20,
+    paddingBottom: 30,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  logoIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.3)",
+  },
+  logoEmoji: {
+    fontSize: 28,
+  },
+  aiIndicator: {
+    position: "absolute",
+    bottom: -4,
+    right: -4,
+    backgroundColor: "#6366F1",
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 2,
+    borderColor: "#0A0A0F",
+  },
+  aiText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.6)",
+    marginTop: 2,
+  },
+  welcomeSection: {
+    marginBottom: 32,
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginBottom: 8,
+  },
+  welcomeDescription: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.6)",
+    lineHeight: 24,
+  },
+  cardsContainer: {
+    gap: 20,
+    marginBottom: 40,
+  },
+  featuredCard: {
+    borderRadius: 24,
+    overflow: "hidden",
+    shadowColor: "#6366F1",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  featuredGradient: {
+    padding: 24,
+  },
+  featuredContent: {
+    gap: 12,
+  },
+  featuredHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  featuredIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  featuredIcon: {
+    fontSize: 24,
+  },
+  featuredBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  featuredBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  featuredTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginTop: 8,
+  },
+  featuredSubject: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+  featuredFooter: {
+    marginTop: 8,
+  },
+  featuredAction: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  actionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  actionCard: {
+    flex: 1,
+    minWidth: "47%",
+    padding: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 8,
+  },
+  actionCardPrimary: {
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    borderColor: "rgba(99, 102, 241, 0.3)",
+  },
+  actionCardSecondary: {
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
+    borderColor: "rgba(139, 92, 246, 0.3)",
+  },
+  actionCardTertiary: {
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    borderColor: "rgba(59, 130, 246, 0.3)",
+  },
+  actionCardQuaternary: {
+    backgroundColor: "rgba(236, 72, 153, 0.1)",
+    borderColor: "rgba(236, 72, 153, 0.3)",
+  },
+  actionIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  actionIcon: {
+    fontSize: 20,
+  },
+  actionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  actionDescription: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.6)",
+  },
+  footer: {
+    alignItems: "center",
+    gap: 20,
+    paddingBottom: 40,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+  },
+  logoutIcon: {
+    fontSize: 16,
+  },
+  logoutText: {
+    color: "#EF4444",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  footerText: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.4)",
+    textAlign: "center",
+  },
+})

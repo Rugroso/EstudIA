@@ -3,6 +3,7 @@ import { ThemedView } from '@/components/themed-view';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import UploadText from '@/components/upload-text';
 import { useTabBarHeight } from '@/hooks/use-tab-bar-height';
+import { useClassroom } from '@/context/ClassroomContext';
 import { router } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
@@ -20,6 +21,7 @@ import { decode as base64ToArrayBuffer } from 'base64-arraybuffer';
 // Use dynamic import for expo-sharing to avoid bundling errors if not installed
 
 export default function ModalScreen() {
+  const { currentClassroom } = useClassroom();
   const insets = useSafeAreaInsets();
   const { scrollViewInset } = useTabBarHeight();
   const { height: winH } = useWindowDimensions();
@@ -137,6 +139,22 @@ export default function ModalScreen() {
     | null
   >(null);
 
+  // Helper para extraer texto de archivos
+  const extractTextFromFile = async (file: any, contentType: string): Promise<string> => {
+    // Para PDFs, usaremos el nombre del archivo como contenido base
+    // En una implementación completa, usarías pdf.js o una API de OCR
+    if (contentType === 'application/pdf') {
+      return `Documento PDF: ${file?.name || 'Sin nombre'}. Contenido del archivo cargado.`;
+    }
+    
+    // Para imágenes, usarías OCR (Tesseract.js o Google Vision API)
+    if (contentType.startsWith('image/')) {
+      return `Imagen: ${file?.name || 'Sin nombre'}. Archivo de imagen cargado.`;
+    }
+    
+    return `Archivo: ${file?.name || 'Sin nombre'}`;
+  };
+
   // Upload when we have a web File object (react-dropzone)
   const uploadWebFile = async (file: any) => {
     try {
@@ -148,6 +166,7 @@ export default function ModalScreen() {
       const safeName = (file?.name as string) || `archivo`;
       const path = `${prefix}/${stamp}-${safeName}`;
 
+      // 1. Subir archivo a Storage
       const { error } = await supabase
         .storage
         .from('uploads')
@@ -155,19 +174,72 @@ export default function ModalScreen() {
 
       if (error) throw error;
       setLastUpload(path);
+      
+      // 2. Obtener URL
+      let fileUrl = '';
       try {
         const signed = await supabase.storage.from('uploads').createSignedUrl(path, 60 * 60 * 24 * 7);
         if (signed.data?.signedUrl) {
           setLastUrl(signed.data.signedUrl);
+          fileUrl = signed.data.signedUrl;
         } else {
           const { data } = supabase.storage.from('uploads').getPublicUrl(path);
           setLastUrl(data.publicUrl);
+          fileUrl = data.publicUrl;
         }
       } catch {
         const { data } = supabase.storage.from('uploads').getPublicUrl(path);
         setLastUrl(data.publicUrl);
+        fileUrl = data.publicUrl;
       }
-      Alert.alert('Subida completa', 'Archivo cargado a Storage en ' + path);
+
+      // 3. Generar embedding del contenido
+      const text = await extractTextFromFile(file, file?.type || '');
+      const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
+      const embeddingRes = await fetch(`${API_BASE}/embedding`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!embeddingRes.ok) {
+        console.error('Error generando embedding');
+        Alert.alert('Advertencia', 'Archivo subido pero no se pudo generar el embedding');
+        return;
+      }
+
+      const embeddingData = await embeddingRes.json();
+      const embedding: number[] = Array.isArray(embeddingData?.embedding) ? embeddingData.embedding : [];
+
+      // 4. Guardar en la tabla documents con classroom_id
+      if (!currentClassroom) {
+        Alert.alert('Advertencia', 'Archivo subido pero no se asoció a ningún salón. Selecciona un salón primero.');
+        return;
+      }
+
+      const { error: dbError } = await supabase.from('documents').insert({
+        classroom_id: currentClassroom.id,
+        user_id: userData?.user?.id,
+        content: text,
+        embedding,
+        file_path: path,
+        file_name: safeName,
+        file_type: (file?.type || '').startsWith('image/') ? 'image' : 
+                   (file?.type || '') === 'application/pdf' ? 'pdf' : 'other',
+        metadata: {
+          size: file?.size,
+          originalType: file?.type,
+          uploadedAt: new Date().toISOString(),
+          classroom: currentClassroom.name,
+        },
+      });
+
+      if (dbError) {
+        console.error('Error guardando documento:', dbError);
+        Alert.alert('Advertencia', 'Archivo subido pero no se guardó en la base de datos: ' + dbError.message);
+      } else {
+        Alert.alert('¡Éxito!', 'Archivo subido y embedding generado correctamente');
+      }
     } catch (e: any) {
       Alert.alert('Error al subir', e?.message ?? 'Fallo desconocido');
     } finally {
@@ -208,20 +280,75 @@ export default function ModalScreen() {
         .upload(path, body as any, { contentType, upsert: false });
 
       if (error) throw error;
-  setLastUpload(path);
-  try {
-    const signed = await supabase.storage.from('uploads').createSignedUrl(path, 60 * 60 * 24 * 7);
-    if (signed.data?.signedUrl) {
-      setLastUrl(signed.data.signedUrl);
-    } else {
-      const { data } = supabase.storage.from('uploads').getPublicUrl(path);
-      setLastUrl(data.publicUrl);
-    }
-  } catch {
-    const { data } = supabase.storage.from('uploads').getPublicUrl(path);
-    setLastUrl(data.publicUrl);
-  }
-      Alert.alert('Subida completa', 'Archivo cargado a Storage en ' + path);
+      setLastUpload(path);
+      
+      // Obtener URL
+      let fileUrl = '';
+      try {
+        const signed = await supabase.storage.from('uploads').createSignedUrl(path, 60 * 60 * 24 * 7);
+        if (signed.data?.signedUrl) {
+          setLastUrl(signed.data.signedUrl);
+          fileUrl = signed.data.signedUrl;
+        } else {
+          const { data } = supabase.storage.from('uploads').getPublicUrl(path);
+          setLastUrl(data.publicUrl);
+          fileUrl = data.publicUrl;
+        }
+      } catch {
+        const { data } = supabase.storage.from('uploads').getPublicUrl(path);
+        setLastUrl(data.publicUrl);
+        fileUrl = data.publicUrl;
+      }
+
+      // Generar embedding
+      const text = `Archivo: ${fileName}. ${contentType.includes('pdf') ? 'Documento PDF' : contentType.includes('image') ? 'Imagen' : 'Archivo'} cargado.`;
+      const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
+      
+      try {
+        const embeddingRes = await fetch(`${API_BASE}/embedding`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+
+        if (embeddingRes.ok) {
+          const embeddingData = await embeddingRes.json();
+          const embedding: number[] = Array.isArray(embeddingData?.embedding) ? embeddingData.embedding : [];
+
+          // Guardar en documents con classroom_id
+          if (!currentClassroom) {
+            Alert.alert('Advertencia', 'Archivo subido sin asociar a salón');
+            return;
+          }
+
+          const { error: dbError } = await supabase.from('documents').insert({
+            classroom_id: currentClassroom.id,
+            user_id: userData?.user?.id,
+            content: text,
+            embedding,
+            file_path: path,
+            file_name: fileName,
+            file_type: contentType.includes('image') ? 'image' : contentType.includes('pdf') ? 'pdf' : 'other',
+            metadata: {
+              contentType,
+              uploadedAt: new Date().toISOString(),
+              classroom: currentClassroom.name,
+            },
+          });
+
+          if (dbError) {
+            console.error('Error guardando documento:', dbError);
+            Alert.alert('Advertencia', 'Archivo subido pero no se guardó en BD');
+          } else {
+            Alert.alert('¡Éxito!', 'Archivo subido y embedding generado');
+          }
+        } else {
+          Alert.alert('Advertencia', 'Archivo subido sin embedding');
+        }
+      } catch (embError) {
+        console.error('Error generando embedding:', embError);
+        Alert.alert('Subida completa', 'Archivo cargado (sin embedding)');
+      }
     } catch (e: any) {
       Alert.alert('Error al subir', e?.message ?? 'Fallo desconocido');
     } finally {
@@ -729,7 +856,7 @@ const styles = StyleSheet.create({
   headerImage: {
     width: '100%',
     height: '100%',
-    opacity: 0.25,
+    opacity: 0.15,
   },
   backButton: {
     position: 'absolute',
@@ -738,24 +865,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
   },
   backText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 13,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
   content: {
-    gap: 12,
+    gap: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    opacity: 0.8,
+    opacity: 0.7,
   },
   optionsGrid: {
     flexDirection: 'row',
@@ -764,14 +895,14 @@ const styles = StyleSheet.create({
   },
   tile: {
     borderWidth: 1,
-    borderColor: '#2A2A2A',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   tileDisabled: {
     opacity: 0.5,
@@ -781,36 +912,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tileLabel: {
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   card: {
     borderWidth: 1,
-    borderColor: '#2A2A2A',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 16,
-    padding: 16,
-    gap: 10,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    padding: 24,
+    gap: 16,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    opacity: 0.9,
+    color: '#FFFFFF',
   },
   previewBox: {
-    gap: 10,
-    paddingVertical: 6,
+    gap: 12,
+    paddingVertical: 8,
   },
   previewTitle: {
-    opacity: 0.9,
-    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '700',
   },
   previewImage: {
     width: '100%',
-    borderRadius: 12,
+    borderRadius: 16,
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.95)',
+    backgroundColor: '#0A0A0F',
     paddingTop: 24,
   },
   modalClose: {
@@ -818,9 +950,11 @@ const styles = StyleSheet.create({
     top: 30,
     right: 20,
     zIndex: 10,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    padding: 8,
-    borderRadius: 999,
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
   },
   modalContent: {
     alignItems: 'center',
@@ -832,50 +966,52 @@ const styles = StyleSheet.create({
   pdfRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   pdfName: {
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   previewActions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
   },
   btn: {
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderWidth: 1,
   },
   btnPrimary: {
-    backgroundColor: '#4f46e5',
-    borderColor: '#4f46e5',
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
   },
   btnPrimaryText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   btnGhost: {
-    borderColor: '#2A2A2A',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   dropZone: {
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: '#2A2A2A',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 6,
-    backgroundColor: 'rgba(255,255,255,0.02)'
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 8,
+    backgroundColor: 'rgba(99, 102, 241, 0.05)'
   },
   dropZoneActive: {
-    borderColor: '#4f46e5',
-    backgroundColor: 'rgba(79,70,229,0.06)'
+    borderColor: '#6366F1',
+    backgroundColor: 'rgba(99, 102, 241, 0.15)'
   },
   uploadRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 4,
+    gap: 10,
+    paddingVertical: 6,
   },
   uploading: {
     opacity: 0.9,

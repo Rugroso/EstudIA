@@ -195,16 +195,6 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
               <Text style={styles.buttonText}>✨ Crear Salón</Text>
             )}
           </Pressable>
-
-          {onCancel && (
-            <Pressable 
-              style={[styles.button, styles.cancelButton]}
-              onPress={onCancel}
-              disabled={isLoading}
-            >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
-            </Pressable>
-          )}
         </View>
       </View>
 
@@ -221,95 +211,99 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#0A0A0F',
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#888',
+    color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 32,
   },
   form: {
-    marginBottom: 30,
+    marginBottom: 32,
   },
   inputGroup: {
     marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    color: '#fff',
-    marginBottom: 8,
-    fontWeight: '500',
+    color: '#FFFFFF',
+    marginBottom: 10,
+    fontWeight: '700',
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: 'rgba(99, 102, 241, 0.05)',
+    borderRadius: 16,
+    padding: 16,
     fontSize: 16,
-    color: '#fff',
+    color: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(99, 102, 241, 0.3)',
   },
   textArea: {
-    height: 80,
+    height: 100,
     textAlignVertical: 'top',
   },
   buttonGroup: {
     gap: 12,
-    marginTop: 20,
+    marginTop: 24,
   },
   button: {
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    borderRadius: 16,
     alignItems: 'center',
   },
   createButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366F1',
   },
   cancelButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   cancelButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '700',
   },
   infoBox: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
-    padding: 15,
-    borderRadius: 12,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    padding: 20,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(0, 122, 255, 0.2)',
+    borderColor: 'rgba(99, 102, 241, 0.3)',
   },
   infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 12,
   },
   infoText: {
-    fontSize: 14,
-    color: '#ccc',
-    marginBottom: 4,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 6,
+    lineHeight: 22,
   },
 });
