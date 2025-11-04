@@ -7,7 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 export default function CreateClassroomPage() {
   const handleSuccess = (classroom: any) => {
-    router.push(`/(tabs)/(drawer)/estudia`);
+    router.push(`/(drawer)/estudia`);
     console.log('Classroom created successfully:', classroom);
   };
 

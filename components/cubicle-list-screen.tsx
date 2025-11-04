@@ -23,7 +23,7 @@ export default function CubicleListScreen() {
       keyExtractor={(c) => c.id}
       renderItem={({ item }) => (
         <Pressable
-          onPress={() => router.push((`/(tabs)/(drawer)/cubicleChat/${item.id}`) as any)}
+          onPress={() => router.push((`/(drawer)/cubicleChat/${item.id}`) as any)}
           style={{ padding: 16, borderBottomWidth: 1, borderColor: "#333" }}
         >
           <Text style={{ fontSize: 16, fontWeight: "600" }}>{item.name}</Text>

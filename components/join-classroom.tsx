@@ -110,7 +110,7 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
-              router.push('/(tabs)/(drawer)/estudia');
+              router.push('/(drawer)/estudia');
             }
           }
         ]);
@@ -143,7 +143,7 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
-              router.push('/(tabs)/(drawer)/estudia');
+              router.push('/(drawer)/estudia');
             }
           }
         ]

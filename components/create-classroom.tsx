@@ -100,7 +100,7 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
             onPress: async () => {
               onSuccess?.(classroom);
               const savedClassroomId = await getSavedClassroomId();
-              router.push('/(tabs)/(drawer)/overview');
+              router.push('/(drawer)/overview');
             }
           }
         ]

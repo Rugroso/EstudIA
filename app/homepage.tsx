@@ -38,7 +38,7 @@ export default function Homepage() {
       const savedClassroomId = await getSavedClassroomId()
 
       if (savedClassroomId) {
-        router.push(`/(tabs)/(drawer)/overview` as any)
+        router.push(`/(drawer)/overview` as any)
       } else {
         setVerSalon(true)
       }
@@ -82,7 +82,7 @@ export default function Homepage() {
   }
 
   if (enterClass) {
-    return <Redirect href="/(tabs)/(drawer)/overview" />
+    return <Redirect href="/(drawer)/overview" />
   }
   if (unirseSalon) {
     return <Redirect href="/classroom/join" />
