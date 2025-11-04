@@ -1,17 +1,17 @@
 import MyClassroom from '@/components/my-classroom';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MyClassroomScreen() {
     const router = useRouter();
     const handleVolverHome = () => {
-        router.push('/');
+        router.back();
     };
     
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Pressable 
                     style={styles.backButton}
@@ -25,7 +25,7 @@ export default function MyClassroomScreen() {
             <MyClassroom 
                 onClassroomSelect={() => console.log('Leave class')}
             />
-        </View>
+        </SafeAreaView>
     );
 }
 

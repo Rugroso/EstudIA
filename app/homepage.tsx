@@ -1,17 +1,13 @@
 "use client"
 import { useAuth } from "@/context/AuthContext"
 import { useClassroom } from "@/context/ClassroomContext"
-import { Redirect, router } from "expo-router"
+import { router } from "expo-router"
 import { useRef, useState } from "react"
 import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { LinearGradient } from "expo-linear-gradient"
 
 export default function Homepage() {
-  const [enterClass, setEnterClass] = useState(false)
-  const [unirseSalon, setUnirseSalon] = useState(false)
-  const [crearSalon, setCrearSalon] = useState(false)
-  const [verSalon, setVerSalon] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(50)).current
 
@@ -38,26 +34,26 @@ export default function Homepage() {
       const savedClassroomId = await getSavedClassroomId()
 
       if (savedClassroomId) {
-        router.push(`/(drawer)/overview` as any)
+        router.replace(`/(drawer)/overview` as any)
       } else {
-        setVerSalon(true)
+        router.push('/classroom/myClassroom')
       }
     } catch (error) {
       console.error("Error loading saved classroom:", error)
-      setVerSalon(true)
+      router.push('/classroom/myClassroom')
     }
   }
 
   const handleUnirseSalon = () => {
-    setUnirseSalon(true)
+    router.push('/classroom/join')
   }
 
   const handleCrearSalon = () => {
-    setCrearSalon(true)
+    router.push('/classroom/create')
   }
 
   const handleVerSalon = () => {
-    setVerSalon(true)
+    router.push('/classroom/myClassroom')
   }
 
   const handleLogout = async () => {
@@ -79,19 +75,6 @@ export default function Homepage() {
         },
       },
     ])
-  }
-
-  if (enterClass) {
-    return <Redirect href="/(drawer)/overview" />
-  }
-  if (unirseSalon) {
-    return <Redirect href="/classroom/join" />
-  }
-  if (crearSalon) {
-    return <Redirect href="/classroom/create" />
-  }
-  if (verSalon) {
-    return <Redirect href="/classroom/myClassroom" />
   }
 
   return (

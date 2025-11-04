@@ -19,11 +19,7 @@ export default function RootLayout() {
           <ClassroomProvider>
             <SafeAreaProvider>
               <Stack screenOptions={{ headerShown: false }}>
-                {/* index existe por default */}
                 <Stack.Screen name="index" />
-                {/* (tabs) es un route group válido */}
-                <Stack.Screen name="(tabs)" />
-                {/* <Stack.Screen name="classroom" /> */}
               </Stack>
             </SafeAreaProvider>
             <StatusBar style="light" />

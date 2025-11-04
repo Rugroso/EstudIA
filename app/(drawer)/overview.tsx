@@ -156,7 +156,7 @@ export default function ClassroomOverview() {
   }
 
   const handleGoBack = () => {
-    router.push("/homepage")
+    router.replace("/homepage")
   }
 
   const formatDate = (dateString: string) => {
@@ -322,7 +322,7 @@ export default function ClassroomOverview() {
       {/* Botón de volver */}
       <Pressable style={styles.backButton} onPress={handleGoBack}>
         <MaterialIcons name="arrow-back" size={20} color="rgba(255, 255, 255, 0.7)" />
-        <Text style={styles.backButtonText}>Volver al inicio</Text>
+        <Text style={styles.backButtonText}>Volver a inicio</Text>
       </Pressable>
     </ScrollableTabView>
   )

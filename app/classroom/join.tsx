@@ -1,7 +1,6 @@
 import JoinClassroom from '@/components/join-classroom';
-import { ScrollableTabView } from '@/components/scrollable-tab-view';
 import { router } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ScrollView, SafeAreaView } from 'react-native';
 import { View, Pressable, Text } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -11,31 +10,37 @@ export default function JoinClassroomPage() {
   };
 
   const handleCancel = () => {
-    router.push('/');
+    router.back();
   };
 
   return (
-    <ScrollableTabView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-                <Pressable 
-                    style={styles.backButton}
-                    onPress={handleCancel}
-                >
-                    <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
-                    <Text style={styles.backButtonText}>Volver al Inicio</Text>
-                </Pressable>
-            </View>
-      <JoinClassroom 
-        onSuccess={handleSuccess}
-        onCancel={handleCancel}
-      />
-    </ScrollableTabView>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+                  <Pressable 
+                      style={styles.backButton}
+                      onPress={handleCancel}
+                  >
+                      <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
+                      <Text style={styles.backButtonText}>Volver al Inicio</Text>
+                  </Pressable>
+              </View>
+        <JoinClassroom 
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+    backgroundColor: '#0A0A0F',
+  },
+  container: {
+    flexGrow: 1,
     backgroundColor: '#0A0A0F',
   },
   header: {
