@@ -1,25 +1,30 @@
 import { createClient } from '@supabase/supabase-js';
 import React, { useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { IconSymbol } from './ui/icon-symbol';
+import ParallaxScrollView from '@/components/parallax-scroll-view';
+import { useTabBarHeight } from '@/hooks/use-tab-bar-height';
+import { ThemedText } from './themed-text';
+import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 const EMBEDDING_URL = process.env.EXPO_PUBLIC_EMBEDDING_URL ?? '';
 const CHAT_URL = process.env.EXPO_PUBLIC_CHAT_URL ?? '';
 
-// ============ UI ============
 export default function SearchScreen() {
   const [text, setText] = useState('');
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const { scrollViewInset } = useTabBarHeight();
 
   const supabase = useMemo(() => createClient(SUPABASE_URL, SUPABASE_ANON), []);
 
   const toastError = (message = 'Something went wrong') => {
-    // simple alert para web; si usas algún toast, reemplaza aquí
     alert('hola ' + message);
   };
 
@@ -67,8 +72,7 @@ export default function SearchScreen() {
         return;
       }
 
-      // 2) buscar documentos similares mediante RPC en Supabase
-      // Asegúrate que la RPC "match_documents" existe y su firma coincide
+
       console.log('🗃️ Buscando documentos en Supabase...');
       const { data: documents, error: rpcError } = await supabase.rpc('match_documents', {
         query_embedding: embedding,
@@ -139,7 +143,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView>
       {/* Lista Q/A */}
       <View>
         <Text style={styles.title}>
@@ -164,9 +168,7 @@ export default function SearchScreen() {
             </View>
           );
         })}
-      </ScrollView>
-
-      <View style={styles.inputBar}>
+        <View style={styles.inputBar}>
         <TextInput
           ref={inputRef}
           value={text}
@@ -185,7 +187,10 @@ export default function SearchScreen() {
           )}
         </Pressable>
       </View>
-    </View>
+      </ScrollView>
+
+
+    </ScrollView>
   );
 }
 
@@ -204,50 +209,61 @@ function generatePrompt(contextText: string, searchText: string) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18181b',
-    padding: 16,
+    backgroundColor: '#0A0A0F',
+    padding: 20,
   },
   title: { 
-    color: 'white', 
-    fontSize: 20, 
+    color: '#FFFFFF', 
+    fontSize: 24, 
     fontWeight: '700', 
-    marginBottom: 12 
+    marginBottom: 16,
+    letterSpacing: -0.5,
   },
-  qIcon: { color: '#818cf8', 
+  qIcon: { 
+    color: '#6366F1', 
     fontWeight: '800', 
-    marginRight: 6 
+    marginRight: 8 
   },
-  qText: { color: '#c7d2fe', 
+  qText: { 
+    color: 'rgba(255, 255, 255, 0.9)', 
     fontSize: 16, 
-    flexShrink: 1 
+    flexShrink: 1,
+    lineHeight: 24,
   },
-  loading: 
-  { color: '#9ca3af' 
+  loading: { 
+    color: 'rgba(255, 255, 255, 0.6)' 
   },
-  aText: { color: '#e5e7eb', 
-    lineHeight: 20 
+  aText: { 
+    color: 'rgba(255, 255, 255, 0.9)', 
+    lineHeight: 24 
   },
   inputBar: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
     alignItems: 'center',
   },
   input: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 52,
     maxHeight: 160,
     borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 12,
-    padding: 12,
-    color: 'white', 
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    backgroundColor: 'rgba(99, 102, 241, 0.05)',
+    borderRadius: 16,
+    padding: 16,
+    color: '#FFFFFF',
+    fontSize: 15,
   },
   button: {
-    backgroundColor: '#4f46e5',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    backgroundColor: '#6366F1',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
   sendBtn: {},
-  buttonText: { color: 'white', fontWeight: '700' },
+  buttonText: { 
+    color: '#FFFFFF', 
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });

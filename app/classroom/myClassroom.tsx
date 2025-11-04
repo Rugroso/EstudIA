@@ -1,44 +1,40 @@
-import JoinClassroom from '@/components/join-classroom';
-import { ScrollableTabView } from '@/components/scrollable-tab-view';
-import { router } from 'expo-router';
-import { StyleSheet } from 'react-native';
-import { View, Pressable, Text } from 'react-native';
+import MyClassroom from '@/components/my-classroom';
+import { useRouter } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function JoinClassroomPage() {
-  const handleSuccess = (classroom: any) => {
-    console.log('Successfully joined classroom:', classroom);
-  };
-
-  const handleCancel = () => {
-    router.push('/');
-  };
-
-  return (
-    <ScrollableTabView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
+export default function MyClassroomScreen() {
+    const router = useRouter();
+    const handleVolverHome = () => {
+        router.push('/');
+    };
+    
+    return (
+        <View style={styles.container}>
+            <View style={styles.header}>
                 <Pressable 
                     style={styles.backButton}
-                    onPress={handleCancel}
+                    onPress={handleVolverHome}
                 >
                     <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
                     <Text style={styles.backButtonText}>Volver al Inicio</Text>
                 </Pressable>
             </View>
-      <JoinClassroom 
-        onSuccess={handleSuccess}
-        onCancel={handleCancel}
-      />
-    </ScrollableTabView>
-  );
+            
+            <MyClassroom 
+                onClassroomSelect={() => console.log('Leave class')}
+            />
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0A0A0F',
-  },
-  header: {
+    container: {
+        flex: 1,
+        backgroundColor: '#0A0A0F',
+    },
+    header: {
         padding: 10,
         paddingTop: 10,
         borderBottomWidth: 1,
