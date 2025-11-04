@@ -281,10 +281,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           throw new Error("Error al guardar los datos del usuario");
         }
 
-        Alert.alert(
-          "Registro exitoso", 
-          "Revisa tu correo para verificar tu cuenta (igual revisa en spam o correos no deseados)."
-        );
         router.replace("/" as any);
       }
     } catch (e: any) {

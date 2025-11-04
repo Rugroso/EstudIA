@@ -11,7 +11,7 @@ interface ChatMessage {
   content: string;
   user_id: string;
   user_email: string;
-  user_name: string | null;
+  user_name: string;
   created_at: string;
 }
 
@@ -50,24 +50,56 @@ export default function CubicleChat() {
         async (payload) => {
           const newMsg = payload.new as any;
           
-          // Cargar información del usuario (solo email de la tabla users)
-          const { data: userData } = await supabase
-            .from('users')
-            .select('email')
-            .eq('id', newMsg.user_id)
-            .single();
+          // Verificar que el mensaje no esté ya en la lista (evitar duplicados)
+          setMessages((prev) => {
+            if (prev.some(msg => msg.id === newMsg.id)) {
+              return prev;
+            }
 
-          const formattedMsg: ChatMessage = {
-            id: newMsg.id,
-            content: newMsg.content,
-            user_id: newMsg.user_id,
-            user_email: userData?.email || 'Usuario',
-            user_name: null,
-            created_at: newMsg.created_at,
-          };
+            // Cargar información del usuario de forma asíncrona
+            supabase
+              .from('users')
+              .select('email, name, last_name')
+              .eq('id', newMsg.user_id)
+              .single()
+              .then(({ data: userData }) => {
+                let displayName = 'Usuario';
+                if (userData) {
+                  if (userData.name && userData.last_name) {
+                    displayName = `${userData.name} ${userData.last_name}`;
+                  } else if (userData.name) {
+                    displayName = userData.name;
+                  } else if (userData.email) {
+                    displayName = userData.email;
+                  }
+                }
+                
+                setMessages((currentMessages) => 
+                  currentMessages.map(msg => 
+                    msg.id === newMsg.id 
+                      ? { 
+                          ...msg, 
+                          user_name: displayName,
+                          user_email: userData?.email || 'Usuario'
+                        }
+                      : msg
+                  )
+                );
+              });
 
-          setMessages((prev) => [...prev, formattedMsg]);
-          scrollToBottom();
+            // Agregar el mensaje inmediatamente con nombre temporal
+            const formattedMsg: ChatMessage = {
+              id: newMsg.id,
+              content: newMsg.content,
+              user_id: newMsg.user_id,
+              user_email: 'Cargando...',
+              user_name: 'Cargando...',
+              created_at: newMsg.created_at,
+            };
+
+            scrollToBottom();
+            return [...prev, formattedMsg];
+          });
         }
       )
       .subscribe();
@@ -83,7 +115,6 @@ export default function CubicleChat() {
     try {
       setLoading(true);
 
-      // Buscar cubículo
       const { data: cubicle, error: cubicleError } = await supabase
         .from('cubicles')
         .select('id')
@@ -162,19 +193,39 @@ export default function CubicleChat() {
 
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('id, email')
+        .select('id, email, name, last_name')
         .in('id', userIds);
+
+      if (usersError) {
+        console.error('❌ [loadMessages] Error cargando usuarios:', usersError);
+      }
+
+      console.log('👥 [loadMessages] Usuarios cargados:', usersData);
 
       const usersMap = new Map(usersData?.map(u => [u.id, u]) || []);
 
       const formattedMessages = messagesData.map((msg: any) => {
         const userData = usersMap.get(msg.user_id);
+        
+        let displayName = 'Usuario';
+        if (userData) {
+          if (userData.name && userData.last_name) {
+            displayName = `${userData.name} ${userData.last_name}`;
+          } else if (userData.name) {
+            displayName = userData.name;
+          } else if (userData.email) {
+            displayName = userData.email;
+          }
+        }
+        
+        console.log(`👤 [loadMessages] Mensaje ${msg.id}: userData =`, userData, `→ displayName = "${displayName}"`);
+        
         return {
           id: msg.id,
           content: msg.content,
           user_id: msg.user_id,
           user_email: userData?.email || 'Usuario',
-          user_name: null,
+          user_name: displayName,
           created_at: msg.created_at,
         };
       });
@@ -194,14 +245,16 @@ export default function CubicleChat() {
     setNewMessage('');
 
     try {
-      const { data, error } = await supabase.from('cubicle_messages').insert({
+      const { error } = await supabase.from('cubicle_messages').insert({
         session_id: sessionId,
         user_id: user.id,
         content: messageContent,
-      }).select();
+      });
 
       if (error) throw error;
 
+      // El mensaje se agregará automáticamente mediante la suscripción Realtime
+      // No es necesario recargar los mensajes manualmente
       scrollToBottom();
     } catch (error: any) {
       Alert.alert('Error', 'No se pudo enviar el mensaje');
@@ -209,8 +262,6 @@ export default function CubicleChat() {
     } finally {
       setSending(false);
     }
-
-    loadMessages(sessionId);
   };
 
   const scrollToBottom = () => {
