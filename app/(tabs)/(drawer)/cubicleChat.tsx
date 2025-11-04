@@ -1,9 +1,8 @@
-import { ScrollableTabView } from '@/components/scrollable-tab-view';
-import { StyleSheet, Text, View, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import { useClassroom } from '@/context/ClassroomContext';
 import { useAuth } from '@/context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
@@ -24,6 +23,7 @@ export default function CubicleChat() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     if (currentClassroom?.id && user?.id) {
@@ -50,10 +50,10 @@ export default function CubicleChat() {
         async (payload) => {
           const newMsg = payload.new as any;
           
-          // Cargar información del usuario
+          // Cargar información del usuario (solo email de la tabla users)
           const { data: userData } = await supabase
             .from('users')
-            .select('email, raw_user_meta_data')
+            .select('email')
             .eq('id', newMsg.user_id)
             .single();
 
@@ -62,11 +62,12 @@ export default function CubicleChat() {
             content: newMsg.content,
             user_id: newMsg.user_id,
             user_email: userData?.email || 'Usuario',
-            user_name: userData?.raw_user_meta_data?.name || null,
+            user_name: null,
             created_at: newMsg.created_at,
           };
 
           setMessages((prev) => [...prev, formattedMsg]);
+          scrollToBottom();
         }
       )
       .subscribe();
@@ -106,7 +107,6 @@ export default function CubicleChat() {
         .maybeSingle();
 
       if (sessionError || !session) {
-        console.error('Session not found:', sessionError);
         Alert.alert('Error', 'No hay sesión activa');
         router.back();
         return;
@@ -122,7 +122,6 @@ export default function CubicleChat() {
         .maybeSingle();
 
       if (membershipError || !membership) {
-        console.error('Not a member:', membershipError);
         Alert.alert('Error', 'No eres miembro de esta sesión');
         router.back();
         return;
@@ -130,7 +129,6 @@ export default function CubicleChat() {
 
       setSessionId(session.id);
     } catch (error) {
-      console.error('Error checking session:', error);
       Alert.alert('Error', 'Error al verificar la sesión');
       router.back();
     } finally {
@@ -140,35 +138,50 @@ export default function CubicleChat() {
 
   const loadMessages = async (sessionId: string) => {
     try {
-      const { data, error } = await supabase
+      // Cargar mensajes básicos
+      const { data: messagesData, error: messagesError } = await supabase
         .from('cubicle_messages')
-        .select(`
-          id,
-          content,
-          user_id,
-          created_at,
-          user:users!cubicle_messages_user_id_fkey (
-            email,
-            raw_user_meta_data
-          )
-        `)
+        .select('id, content, user_id, created_at')
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (messagesError) {
+        throw messagesError;
+      }
 
-      const formattedMessages = (data || []).map((msg: any) => ({
-        id: msg.id,
-        content: msg.content,
-        user_id: msg.user_id,
-        user_email: msg.user?.email || 'Usuario',
-        user_name: msg.user?.raw_user_meta_data?.name || null,
-        created_at: msg.created_at,
-      }));
+      if (!messagesData || messagesData.length === 0) {
+        console.log('📭 [loadMessages] No hay mensajes');
+        setMessages([]);
+        return;
+      }
+
+      console.log('📄 [loadMessages] Mensajes raw:', messagesData);
+
+      // Cargar información de usuarios
+      const userIds = [...new Set(messagesData.map(msg => msg.user_id))];
+
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, email')
+        .in('id', userIds);
+
+      const usersMap = new Map(usersData?.map(u => [u.id, u]) || []);
+
+      const formattedMessages = messagesData.map((msg: any) => {
+        const userData = usersMap.get(msg.user_id);
+        return {
+          id: msg.id,
+          content: msg.content,
+          user_id: msg.user_id,
+          user_email: userData?.email || 'Usuario',
+          user_name: null,
+          created_at: msg.created_at,
+        };
+      });
 
       setMessages(formattedMessages);
+      scrollToBottom();
     } catch (error) {
-      console.error('Error loading messages:', error);
       setMessages([]);
     }
   };
@@ -178,24 +191,32 @@ export default function CubicleChat() {
 
     const messageContent = newMessage.trim();
     setSending(true);
-    setNewMessage(''); // Limpiar el input inmediatamente para mejor UX
+    setNewMessage('');
 
     try {
-      const { error } = await supabase.from('cubicle_messages').insert({
+      const { data, error } = await supabase.from('cubicle_messages').insert({
         session_id: sessionId,
         user_id: user.id,
         content: messageContent,
-      });
+      }).select();
 
       if (error) throw error;
 
+      scrollToBottom();
     } catch (error: any) {
-      console.error('Error sending message:', error);
       Alert.alert('Error', 'No se pudo enviar el mensaje');
-      setNewMessage(messageContent); // Restaurar el mensaje si falla
+      setNewMessage(messageContent);
     } finally {
       setSending(false);
     }
+
+    loadMessages(sessionId);
+  };
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
   };
 
   const formatTime = (timestamp: string) => {
@@ -205,19 +226,19 @@ export default function CubicleChat() {
 
   if (loading) {
     return (
-      <ScrollableTabView contentContainerStyle={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6366F1" />
         <Text style={styles.loadingText}>Cargando chat...</Text>
-      </ScrollableTabView>
+      </View>
     );
   }
 
   if (!currentClassroom) {
     return (
-      <ScrollableTabView contentContainerStyle={styles.errorContainer}>
-        <MaterialIcons name="error-outline" size={64} color="#FF3B30" />
+      <View style={styles.errorContainer}>
+        <MaterialIcons name="error-outline" size={64} color="#EF4444" />
         <Text style={styles.errorText}>No hay salón seleccionado</Text>
-      </ScrollableTabView>
+      </View>
     );
   }
 
@@ -237,8 +258,11 @@ export default function CubicleChat() {
         </View>
       </View>
 
-      <ScrollableTabView 
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.messagesScrollView}
         contentContainerStyle={styles.messagesContainer}
+        onContentSizeChange={() => scrollToBottom()}
       >
         {messages.length === 0 ? (
           <View style={styles.emptyState}>
@@ -265,7 +289,7 @@ export default function CubicleChat() {
             </View>
           ))
         )}
-      </ScrollableTabView>
+      </ScrollView>
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -350,6 +374,9 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.6)',
     marginTop: 2,
   },
+  messagesScrollView: {
+    flex: 1,
+  },
   messagesContainer: {
     padding: 20,
     flexGrow: 1,
@@ -359,6 +386,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
+    minHeight: 400,
   },
   emptyText: {
     fontSize: 20,

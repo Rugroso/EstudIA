@@ -1,11 +1,12 @@
 import { ScrollableTabView } from '@/components/scrollable-tab-view';
-import { StyleSheet, Text, View, Pressable, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useClassroom } from '@/context/ClassroomContext';
 import { useAuth } from '@/context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+
 
 interface SessionMember {
   user_id: string;
@@ -181,7 +182,10 @@ export default function CubicleScreen() {
   };
 
   return (
-    <ScrollableTabView contentContainerStyle={styles.container}>
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollContent}
+    >
       {currentClassroom ? (
         <View style={styles.content}>
           <View style={styles.header}>
@@ -294,18 +298,21 @@ export default function CubicleScreen() {
         </View>
       )}
       
-    </ScrollableTabView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
     backgroundColor: '#0A0A0F',
+  },
+  scrollContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   content: {
-    flex: 1,
+    // No usar flex: 1 aquí
   },
   header: {
     alignItems: 'center',
