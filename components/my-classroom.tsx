@@ -157,7 +157,7 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
       });
 
       // Navegar usando ruta dinámica
-      router.push(`/(tabs)/(drawer)/overview` as any);
+      router.push(`/(drawer)/overview` as any);
       
       if (onClassroomSelect) {
         onClassroomSelect(classroom);
@@ -286,7 +286,7 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
       }
     >
       <View style={styles.header}>
-        <Text style={styles.title}>📚 Mis Salones</Text>
+        <Text style={styles.title}>Mis Salones</Text>
         <Text style={styles.subtitle}>
           {classrooms.length === 0 
             ? 'No tienes salones aún' 
