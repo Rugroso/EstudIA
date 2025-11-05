@@ -199,6 +199,8 @@ export default function DrawerLayout() {
     <Drawer
       screenOptions={{
         headerShown: !isInCubicleChat,
+        swipeEnabled: !isInCubicleChat,
+        drawerType: isInCubicleChat ? 'front' : 'slide',
         headerStyle: {
           backgroundColor: '#0A0A0F',
           borderBottomWidth: 1,
