@@ -28,16 +28,27 @@ interface ProfessorAssistantData {
 }
 
 interface ProfessorAssistantResponse {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  structuredContent: {
-    success: boolean;
-    data: ProfessorAssistantData;
-    message: string;
+  success: boolean;
+  data: {
+    content: Array<{
+      type: string;
+      text: string;
+    }>;
+    isError: boolean;
+    structuredContent: {
+      success: boolean;
+      data: ProfessorAssistantData;
+      message: string;
+    };
   };
-  isError: boolean;
+  source: string;
+  timestamp: string;
+  metadata: {
+    message_length: number;
+    classroom_id: string;
+    user_id: string;
+    session_id: string;
+  };
 }
 
 export default function SearchScreen() {
@@ -99,25 +110,32 @@ export default function SearchScreen() {
       const apiResponse: ProfessorAssistantResponse = await response.json();
       console.log('📄 Respuesta API completa:', apiResponse);
 
-      // Verificar si hay error
-      if (apiResponse.isError) {
+      // Verificar si la respuesta fue exitosa a nivel general
+      if (!apiResponse.success) {
+        setAnswers((prev) => [...prev, 'Error al obtener respuesta del servidor.']);
+        setLoading(false);
+        return;
+      }
+
+      // Verificar si hay error en los datos
+      if (apiResponse.data.isError) {
         setAnswers((prev) => [...prev, 'Ocurrió un error al procesar tu pregunta.']);
         setLoading(false);
         return;
       }
 
       // Verificar el contenido estructurado
-      if (!apiResponse.structuredContent?.success) {
-        const errorMsg = apiResponse.structuredContent?.message || 'Error desconocido';
+      if (!apiResponse.data.structuredContent?.success) {
+        const errorMsg = apiResponse.data.structuredContent?.message || 'Error desconocido';
         setAnswers((prev) => [...prev, `Error: ${errorMsg}`]);
         setLoading(false);
         return;
       }
 
       // Obtener la respuesta
-      const answerText = apiResponse.structuredContent.data.response;
-      const chunksUsed = apiResponse.structuredContent.data.chunks_referenced;
-      const totalDocs = apiResponse.structuredContent.data.total_documents;
+      const answerText = apiResponse.data.structuredContent.data.response;
+      const chunksUsed = apiResponse.data.structuredContent.data.chunks_referenced;
+      const totalDocs = apiResponse.data.structuredContent.data.total_documents;
 
       console.log(`✅ Respuesta obtenida (${chunksUsed} chunks de ${totalDocs} documentos)`);
 
