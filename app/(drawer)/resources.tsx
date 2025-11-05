@@ -96,24 +96,31 @@ export default function ResourcesScreen() {
     setLoading(true)
     
     try {
+      console.log('🚀 Enviando petición al endpoint de recursos:', {
+        classroom_id: currentClassroom.id,
+        resource_type: "pdf",
+        user_id: user.id,
+        topic: currentClassroom.name || "Material del salón"
+      })
+
       const response = await fetch('https://d8pgui6dhb.execute-api.us-east-2.amazonaws.com/generate-resources', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          //classroom_id: currentClassroom.id,
-          //resource_type: "pdf",
-          //user_id: user.id,
-          //topic: currentClassroom.name || "Material del salón",
-          //source_document_ids: [] // Array vacío por ahora, se puede llenar después
-          "classroom_id": "0185c8b6-6774-4cd2-b0aa-76a018f072a7",
-          "resource_type": "pdf",
-          "user_id": "789e0123-e89b-12d3-a456-426614174999",
-          "topic": "",
-          "source_document_ids": []
+          classroom_id: currentClassroom.id,
+          resource_type: "pdf",
+          user_id: user.id,
+          topic: currentClassroom.name || "Material del salón",
+          source_document_ids: []
         })
       })
+
+      // Verificar si la respuesta HTTP fue exitosa
+      if (!response.ok) {
+        throw new Error('Error al conectar con el servidor')
+      }
 
       const apiResponse: ResourcesAPIResponse = await response.json()
 
@@ -155,7 +162,10 @@ export default function ResourcesScreen() {
 
     } catch (error) {
       console.error('❌ [Resources] Error:', error)
-      Alert.alert('Error', 'No se pudieron generar los recursos. Verifica tu conexión.')
+      Alert.alert(
+        'Error', 
+        error instanceof Error ? error.message : 'No se pudieron generar los recursos. Verifica tu conexión.'
+      )
     } finally {
       setLoading(false)
     }

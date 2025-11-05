@@ -2,11 +2,12 @@ import { createClient } from '@supabase/supabase-js';
 import React, { useMemo, useRef, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { IconSymbol } from './ui/icon-symbol';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { useTabBarHeight } from '@/hooks/use-tab-bar-height';
 import { ThemedText } from './themed-text';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
+import { useClassroom } from '@/context/ClassroomContext';
 
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
@@ -14,7 +15,34 @@ const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 const EMBEDDING_URL = process.env.EXPO_PUBLIC_EMBEDDING_URL ?? '';
 const CHAT_URL = process.env.EXPO_PUBLIC_CHAT_URL ?? '';
 
+// Interfaces para el nuevo formato de API
+interface ProfessorAssistantData {
+  response: string;
+  chunks_referenced: number;
+  chunks: any[];
+  classroom_id: string;
+  personalized: boolean;
+  documents: any[];
+  document_ids: string[];
+  total_documents: number;
+}
+
+interface ProfessorAssistantResponse {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+  structuredContent: {
+    success: boolean;
+    data: ProfessorAssistantData;
+    message: string;
+  };
+  isError: boolean;
+}
+
 export default function SearchScreen() {
+  const { user } = useAuth();
+  const { currentClassroom } = useClassroom();
   const [text, setText] = useState('');
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -24,116 +52,79 @@ export default function SearchScreen() {
 
   const supabase = useMemo(() => createClient(SUPABASE_URL, SUPABASE_ANON), []);
 
-  const toastError = (message = 'Something went wrong') => {
-    alert('hola ' + message);
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    // en Expo Web no hay router de Next; puedes limpiar estado o redirigir con location:
-    if (Platform.OS === 'web') location.reload();
-  };
-
   const handleSearch = async () => {
     const q = text.trim();
     if (!q) return;
+
+    // Validar que tengamos classroom y usuario
+    if (!currentClassroom?.id) {
+      alert('Por favor selecciona un salón primero');
+      return;
+    }
+
+    if (!user?.id) {
+      alert('Usuario no autenticado');
+      return;
+    }
+
     setLoading(true);
     setQuestions((prev) => [...prev, q]);
     setText('');
 
-    console.log('🔍 Iniciando búsqueda para:', q);
-    console.log('🌐 EMBEDDING_URL:', EMBEDDING_URL);
-    console.log('💬 CHAT_URL:', CHAT_URL);
+    console.log('🔍 Enviando pregunta a Professor Assistant:', {
+      message: q,
+      user_id: user.id,
+      classroom_id: currentClassroom.id
+    });
 
     try {
-      console.log('📡 Haciendo request de embedding...');
-      const er = await fetch(EMBEDDING_URL, {
+      const response = await fetch('https://u7jss6bicb.execute-api.us-east-2.amazonaws.com/chat-classroom', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: q.replace(/\n/g, ' ') }),
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({
+          message: q,
+          user_id: user.id,
+          classroom_id: currentClassroom.id,
+        }),
       });
 
-      console.log('📥 Respuesta embedding status:', er.status);
-      if (!er.ok) {
-        toastError(`Embedding HTTP ${er.status}`);
-        setAnswers((prev) => [...prev, 'Error creando embedding.']);
+      console.log('� Respuesta status:', response.status);
+
+      if (!response.ok) {
+        throw new Error('Error al conectar con el servidor');
+      }
+
+      const apiResponse: ProfessorAssistantResponse = await response.json();
+      console.log('📄 Respuesta API completa:', apiResponse);
+
+      // Verificar si hay error
+      if (apiResponse.isError) {
+        setAnswers((prev) => [...prev, 'Ocurrió un error al procesar tu pregunta.']);
         setLoading(false);
         return;
       }
 
-      const ejson = await er.json();
-      console.log('🔢 Respuesta embedding JSON:', ejson);
-      const embedding: number[] = ejson.embedding ?? ejson?.data?.[0]?.embedding;
-
-      if (!embedding || !Array.isArray(embedding)) {
-        toastError('Respuesta de embedding inválida');
-        setAnswers((prev) => [...prev, 'Respuesta de embedding inválida.']);
+      // Verificar el contenido estructurado
+      if (!apiResponse.structuredContent?.success) {
+        const errorMsg = apiResponse.structuredContent?.message || 'Error desconocido';
+        setAnswers((prev) => [...prev, `Error: ${errorMsg}`]);
         setLoading(false);
         return;
       }
 
+      // Obtener la respuesta
+      const answerText = apiResponse.structuredContent.data.response;
+      const chunksUsed = apiResponse.structuredContent.data.chunks_referenced;
+      const totalDocs = apiResponse.structuredContent.data.total_documents;
 
-      console.log('🗃️ Buscando documentos en Supabase...');
-      const { data: documents, error: rpcError } = await supabase.rpc('match_documents', {
-        query_embedding: embedding,
-        match_threshold: 0.3,
-        match_count: 10,
-      });
+      console.log(`✅ Respuesta obtenida (${chunksUsed} chunks de ${totalDocs} documentos)`);
 
-      console.log('📄 Documentos encontrados:', documents?.length || 0);
-      if (rpcError) {
-        toastError('RPC match_documents falló: ' + rpcError.message);
-        setAnswers((prev) => [...prev, 'No pude buscar contexto en la base.']);
-        setLoading(false);
-        return;
-      }
+      setAnswers((prev) => [...prev, answerText]);
 
-      let tokenCount = 0;
-      let contextText = '';
-      for (let i = 0; i < (documents?.length ?? 0); i++) {
-        const d = documents[i];
-        const content = d?.content ?? '';
-        const tokens = d?.token ?? Math.ceil(content.length / 4);
-        if (tokenCount + tokens > 1500) break;
-        tokenCount += tokens;
-        contextText += `${String(content).trim()}\n--\n`;
-      }
-
-      if (!contextText) {
-        setAnswers((prev) => [...prev, 'No encontré contexto relacionado. Intenta otra pregunta.']);
-        setLoading(false);
-        return;
-      }
-
-      const prompt = generatePrompt(contextText, q);
-
-      console.log('🤖 Enviando prompt al chat...');
-      const cr = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-
-      console.log('💭 Respuesta chat status:', cr.status);
-      if (!cr.ok) {
-        toastError(`Chat HTTP ${cr.status}`);
-        setAnswers((prev) => [...prev, 'Error generando respuesta.']);
-        setLoading(false);
-        return;
-      }
-
-      const cjson = await cr.json();
-      // acepta varias formas: { answer } o { choices: [{ text }] } o { content }
-      const answer =
-        cjson.answer ??
-        cjson?.choices?.[0]?.text ??
-        cjson?.content ??
-        'No tuve respuesta del modelo.';
-
-      setAnswers((prev) => [...prev, String(answer)]);
     } catch (err: any) {
       console.error('❌ Error completo:', err);
-      console.error('❌ Error stack:', err?.stack);
       alert(err?.message ?? 'Fallo la búsqueda');
       setAnswers((prev) => [...prev, 'Ocurrió un error en la búsqueda.']);
     } finally {
@@ -155,16 +146,34 @@ export default function SearchScreen() {
           const a = answers[i];
           const isLoading = loading && !a;
           return (
-            <View key={`${i}-${q}`} style={{ marginBottom: 16 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                <Text style={[styles.qIcon]}>Q:</Text>
-                <Text style={styles.qText}>{q}</Text>
+            <View key={`${i}-${q}`} style={styles.chatBubbleContainer}>
+              {/* Pregunta del usuario */}
+              <View style={styles.userBubble}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <MaterialIcons name="person" size={16} color="#6366F1" style={{ marginRight: 6 }} />
+                  <Text style={styles.userLabel}>Tú</Text>
+                </View>
+                <Text style={styles.userText}>{q}</Text>
               </View>
+              
+              {/* Respuesta del asistente */}
               {isLoading ? (
-                <Text style={styles.loading}>Loading...</Text>
-              ) : (
-                <Text style={styles.aText}>{a}</Text>
-              )}
+                <View style={styles.assistantBubble}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                    <MaterialIcons name="school" size={16} color="#8B5CF6" style={{ marginRight: 6 }} />
+                    <Text style={styles.assistantLabel}>Profesor Asistente</Text>
+                  </View>
+                  <Text style={styles.loading}>Escribiendo...</Text>
+                </View>
+              ) : a ? (
+                <View style={styles.assistantBubble}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                    <MaterialIcons name="school" size={16} color="#8B5CF6" style={{ marginRight: 6 }} />
+                    <Text style={styles.assistantLabel}>Profesor Asistente</Text>
+                  </View>
+                  <Text style={styles.assistantText}>{a}</Text>
+                </View>
+              ) : null}
             </View>
           );
         })}
@@ -173,7 +182,7 @@ export default function SearchScreen() {
           ref={inputRef}
           value={text}
           onChangeText={setText}
-          placeholder="Ask estudIA a question"
+          placeholder="Pregúntale a tu profesor asistente..."
           placeholderTextColor="#999"
           onSubmitEditing={handleSearch}
           style={styles.input}
@@ -194,18 +203,6 @@ export default function SearchScreen() {
   );
 }
 
-function generatePrompt(contextText: string, searchText: string) {
-  return (
-    `You are a very enthusiastic estudIA representative who loves to help people! ` +
-    `Given the following sections from the estudIA documentation, answer the question ` +
-    `using only that information, outputted in markdown format. If you are unsure and ` +
-    `the answer is not explicitly written in the documentation, say "Sorry, I don't know how to help with that."\n\n` +
-    `Context sections:\n${contextText}\n\n` +
-    `Question: """\n${searchText}\n"""\n\n` +
-    `Answer as markdown (including related code snippets if available):\n`
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -219,6 +216,54 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     letterSpacing: -0.5,
   },
+  chatBubbleContainer: {
+    marginBottom: 24,
+  },
+  userBubble: {
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    alignSelf: 'flex-end',
+    maxWidth: '85%',
+  },
+  userLabel: {
+    color: '#6366F1',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  userText: {
+    color: 'rgba(255, 255, 255, 0.95)',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  assistantBubble: {
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    borderRadius: 16,
+    padding: 16,
+    alignSelf: 'flex-start',
+    maxWidth: '85%',
+  },
+  assistantLabel: {
+    color: '#8B5CF6',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  assistantText: {
+    color: 'rgba(255, 255, 255, 0.95)',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  loading: { 
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontStyle: 'italic',
+  },
   qIcon: { 
     color: '#6366F1', 
     fontWeight: '800', 
@@ -229,9 +274,6 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     flexShrink: 1,
     lineHeight: 24,
-  },
-  loading: { 
-    color: 'rgba(255, 255, 255, 0.6)' 
   },
   aText: { 
     color: 'rgba(255, 255, 255, 0.9)', 
