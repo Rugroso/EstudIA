@@ -300,7 +300,7 @@ export default function CubicleChat() {
       keyboardVerticalOffset={100}
     >
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={() => router.push('/(drawer)/cubicle')} style={styles.backButton}>
           <MaterialIcons name="arrow-back" size={24} color="#fff" />
         </Pressable>
         <View style={styles.headerInfo}>

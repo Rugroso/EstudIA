@@ -172,6 +172,7 @@ export default function CubicleScreen() {
 
       setActiveSessionId(null);
       setSessionMembers([]);
+      await loadSessionMembers();
       Alert.alert('Éxito', 'Has salido del cubículo');
     } catch (error: any) {
       console.error('Error leaving cubicle:', error);

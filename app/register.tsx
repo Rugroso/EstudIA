@@ -12,7 +12,8 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { Colors } from "../constants/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
@@ -25,6 +26,8 @@ export default function Register() {
   const [cellphone, setCellphone] = useState("");
   const [gender, setGender] = useState("");
   const [location, setLocation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const { register, loading } = useAuth();
 
@@ -71,78 +74,105 @@ export default function Register() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          {/* Header */}
+          {/* Header con gradiente */}
           <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <LinearGradient
+                colors={["#6366F1", "#8B5CF6"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.logoGradient}
+              >
+                <MaterialIcons name="person-add" size={48} color="#FFFFFF" />
+              </LinearGradient>
+            </View>
             <Text style={styles.title}>Crear Cuenta</Text>
-            <Text style={styles.subtitle}>Completa tus datos para registrarte</Text>
+            <Text style={styles.subtitle}>Completa tus datos para unirte a EstudIA</Text>
           </View>
 
           {/* Formulario */}
           <View style={styles.form}>
-            {/* Nombre */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Nombre</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Tu nombre"
-                placeholderTextColor={Colors.dark.tabIconDefault}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-              />
-            </View>
 
-            {/* Apellido */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Apellido</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Tu apellido"
-                placeholderTextColor={Colors.dark.tabIconDefault}
-                value={lastName}
-                onChangeText={setLastName}
-                autoCapitalize="words"
-              />
+            {/* Nombre y Apellido en fila */}
+            <View style={styles.row}>
+              <View style={[styles.inputContainer, styles.halfWidth]}>
+                <Text style={styles.label}>Nombre</Text>
+                <View style={styles.inputWrapper}>
+                  <MaterialIcons name="person" size={20} color="rgba(255, 255, 255, 0.4)" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Tu nombre"
+                    placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                    value={name}
+                    onChangeText={setName}
+                    autoCapitalize="words"
+                  />
+                </View>
+              </View>
+
+              <View style={[styles.inputContainer, styles.halfWidth]}>
+                <Text style={styles.label}>Apellido</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={[styles.input, styles.inputNoPadding]}
+                    placeholder="Tu apellido"
+                    placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                    value={lastName}
+                    onChangeText={setLastName}
+                    autoCapitalize="words"
+                  />
+                </View>
+              </View>
             </View>
 
             {/* Email */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Correo electrónico</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="correo@ejemplo.com"
-                placeholderTextColor={Colors.dark.tabIconDefault}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
+              <View style={styles.inputWrapper}>
+                <MaterialIcons name="email" size={20} color="rgba(255, 255, 255, 0.4)" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="correo@ejemplo.com"
+                  placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                />
+              </View>
             </View>
 
-            {/* Teléfono */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Teléfono</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="+52 123 456 7890"
-                placeholderTextColor={Colors.dark.tabIconDefault}
-                value={cellphone}
-                onChangeText={setCellphone}
-                keyboardType="phone-pad"
-              />
-            </View>
+            {/* Teléfono y Fecha de nacimiento en fila */}
+            <View style={styles.row}>
+              <View style={[styles.inputContainer, styles.halfWidth]}>
+                <Text style={styles.label}>Teléfono</Text>
+                <View style={styles.inputWrapper}>
+                  <MaterialIcons name="phone" size={20} color="rgba(255, 255, 255, 0.4)" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="+52 123 456"
+                    placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                    value={cellphone}
+                    onChangeText={setCellphone}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+              </View>
 
-            {/* Fecha de nacimiento */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Fecha de nacimiento</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="DD/MM/AAAA"
-                placeholderTextColor={Colors.dark.tabIconDefault}
-                value={birthdate}
-                onChangeText={setBirthdate}
-              />
+              <View style={[styles.inputContainer, styles.halfWidth]}>
+                <Text style={styles.label}>Nacimiento</Text>
+                <View style={styles.inputWrapper}>
+                  <MaterialIcons name="cake" size={20} color="rgba(255, 255, 255, 0.4)" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="DD/MM/AAAA"
+                    placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                    value={birthdate}
+                    onChangeText={setBirthdate}
+                  />
+                </View>
+              </View>
             </View>
 
             {/* Género */}
@@ -155,7 +185,13 @@ export default function Register() {
                     gender === "Masculino" && styles.genderButtonActive,
                   ]}
                   onPress={() => setGender("Masculino")}
+                  activeOpacity={0.7}
                 >
+                  <MaterialIcons 
+                    name="male" 
+                    size={20} 
+                    color={gender === "Masculino" ? "#FFFFFF" : "rgba(255, 255, 255, 0.4)"} 
+                  />
                   <Text
                     style={[
                       styles.genderButtonText,
@@ -171,7 +207,13 @@ export default function Register() {
                     gender === "Femenino" && styles.genderButtonActive,
                   ]}
                   onPress={() => setGender("Femenino")}
+                  activeOpacity={0.7}
                 >
+                  <MaterialIcons 
+                    name="female" 
+                    size={20} 
+                    color={gender === "Femenino" ? "#FFFFFF" : "rgba(255, 255, 255, 0.4)"} 
+                  />
                   <Text
                     style={[
                       styles.genderButtonText,
@@ -187,7 +229,13 @@ export default function Register() {
                     gender === "Otro" && styles.genderButtonActive,
                   ]}
                   onPress={() => setGender("Otro")}
+                  activeOpacity={0.7}
                 >
+                  <MaterialIcons 
+                    name="wc" 
+                    size={20} 
+                    color={gender === "Otro" ? "#FFFFFF" : "rgba(255, 255, 255, 0.4)"} 
+                  />
                   <Text
                     style={[
                       styles.genderButtonText,
@@ -203,55 +251,96 @@ export default function Register() {
             {/* Ubicación */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Ubicación</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ciudad, País"
-                placeholderTextColor={Colors.dark.tabIconDefault}
-                value={location}
-                onChangeText={setLocation}
-                autoCapitalize="words"
-              />
+              <View style={styles.inputWrapper}>
+                <MaterialIcons name="location-on" size={20} color="rgba(255, 255, 255, 0.4)" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ciudad, País"
+                  placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                  value={location}
+                  onChangeText={setLocation}
+                  autoCapitalize="words"
+                />
+              </View>
             </View>
+
 
             {/* Contraseña */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Contraseña</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Mínimo 6 caracteres"
-                placeholderTextColor={Colors.dark.tabIconDefault}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-              />
+              <View style={styles.inputWrapper}>
+                <MaterialIcons name="lock" size={20} color="rgba(255, 255, 255, 0.4)" style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, styles.inputWithIcon]}
+                  placeholder="Mínimo 6 caracteres"
+                  placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <MaterialIcons
+                    name={showPassword ? "visibility" : "visibility-off"}
+                    size={20}
+                    color="rgba(255, 255, 255, 0.4)"
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Confirmar contraseña */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Confirmar contraseña</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Repite tu contraseña"
-                placeholderTextColor={Colors.dark.tabIconDefault}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                autoCapitalize="none"
-              />
+              <View style={styles.inputWrapper}>
+                <MaterialIcons name="lock" size={20} color="rgba(255, 255, 255, 0.4)" style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, styles.inputWithIcon]}
+                  placeholder="Repite tu contraseña"
+                  placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <MaterialIcons
+                    name={showConfirmPassword ? "visibility" : "visibility-off"}
+                    size={20}
+                    color="rgba(255, 255, 255, 0.4)"
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Botón de registro */}
+            {/* Botón de registro con gradiente */}
             <TouchableOpacity
-              style={[styles.button, styles.primaryButton]}
+              style={styles.primaryButton}
               onPress={handleRegister}
               disabled={loading}
+              activeOpacity={0.8}
             >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Crear cuenta</Text>
-              )}
+              <LinearGradient
+                colors={loading ? ["#4B5563", "#6B7280"] : ["#6366F1", "#8B5CF6"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.primaryButtonGradient}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.primaryButtonText}>Crear cuenta</Text>
+                    <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
 
             {/* Link a login */}
@@ -271,7 +360,7 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.dark.background,
+    backgroundColor: "#0A0A0F",
   },
   scrollContent: {
     flexGrow: 1,
@@ -285,19 +374,49 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 32,
   },
+  logoContainer: {
+    marginBottom: 24,
+    borderRadius: 28,
+    overflow: "hidden",
+  },
+  logoGradient: {
+    width: 96,
+    height: 96,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 28,
+  },
   title: {
     fontSize: 32,
-    fontWeight: "bold",
-    color: Colors.dark.text,
+    fontWeight: "700",
+    color: "#FFFFFF",
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
-    color: Colors.dark.tabIconDefault,
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.6)",
     textAlign: "center",
+    maxWidth: 300,
+    lineHeight: 22,
   },
   form: {
     width: "100%",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 16,
+    marginTop: 8,
+    letterSpacing: -0.3,
+  },
+  row: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  halfWidth: {
+    flex: 1,
   },
   inputContainer: {
     marginBottom: 16,
@@ -305,71 +424,101 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.dark.text,
+    color: "#FFFFFF",
     marginBottom: 8,
+    letterSpacing: 0.2,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    backgroundColor: Colors.dark.background,
-    borderWidth: 1,
-    borderColor: Colors.dark.tabIconDefault,
-    borderRadius: 12,
-    padding: 16,
+    flex: 1,
+    paddingVertical: 16,
     fontSize: 16,
-    color: Colors.dark.text,
+    color: "#FFFFFF",
+  },
+  inputNoPadding: {
+    paddingLeft: 0,
+  },
+  inputWithIcon: {
+    paddingRight: 40,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 16,
+    padding: 4,
   },
   genderContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     gap: 8,
   },
   genderButton: {
     flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.dark.tabIconDefault,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   genderButtonActive: {
-    backgroundColor: Colors.dark.tint,
-    borderColor: Colors.dark.tint,
+    backgroundColor: "rgba(99, 102, 241, 0.3)",
+    borderColor: "#6366F1",
   },
   genderButtonText: {
-    color: Colors.dark.tabIconDefault,
-    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.6)",
+    fontSize: 13,
     fontWeight: "600",
   },
   genderButtonTextActive: {
-    color: "#fff",
-  },
-  button: {
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    marginVertical: 8,
+    color: "#FFFFFF",
   },
   primaryButton: {
-    backgroundColor: Colors.dark.tint,
-    marginTop: 16,
+    marginTop: 24,
+    borderRadius: 16,
+    overflow: "hidden",
   },
-  buttonText: {
-    color: "#fff",
+  primaryButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+  },
+  primaryButtonText: {
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 16,
-    marginBottom: 24,
+    marginTop: 24,
+    marginBottom: 16,
+    alignItems: "center",
   },
   footerText: {
-    color: Colors.dark.tabIconDefault,
-    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.6)",
+    fontSize: 15,
   },
   linkText: {
-    color: Colors.dark.tint,
-    fontSize: 14,
-    fontWeight: "600",
+    color: "#6366F1",
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

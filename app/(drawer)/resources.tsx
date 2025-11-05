@@ -1,11 +1,39 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ScrollableTabView } from "@/components/scrollable-tab-view"
-import { Text, View, StyleSheet, Pressable, Modal } from "react-native"
+import { Text, View, StyleSheet, Pressable, Modal, ActivityIndicator, Alert } from "react-native"
 import { MaterialIcons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { useClassroom } from "@/context/ClassroomContext"
+
+interface KeyConcept {
+  concept: string
+  definition: string
+  importance: string
+}
+
+interface Exercise {
+  exercise: string
+  difficulty: string
+  objective: string
+}
+
+interface GeneratedResources {
+  summary: string
+  key_concepts: KeyConcept[]
+  study_tips: string[]
+  suggested_exercises: Exercise[]
+  recommended_readings: string[]
+}
+
+interface ResourcesResponse {
+  success: boolean
+  message: string
+  resources: GeneratedResources
+  classroom_id: string
+  chunks_analyzed: number
+}
 
 interface FlashCard {
   id: string
@@ -23,109 +51,114 @@ interface MindMap {
 
 export default function ResourcesScreen() {
   const { currentClassroom } = useClassroom()
-  const [selectedTab, setSelectedTab] = useState<"flashcards" | "mindmaps">("flashcards")
+  const [selectedTab, setSelectedTab] = useState<"summary" | "concepts" | "exercises">("summary")
   const [selectedCard, setSelectedCard] = useState<FlashCard | null>(null)
   const [isFlipped, setIsFlipped] = useState(false)
   const [showCardModal, setShowCardModal] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [resources, setResources] = useState<GeneratedResources | null>(null)
+  const [selectedConcept, setSelectedConcept] = useState<KeyConcept | null>(null)
+  const [showConceptModal, setShowConceptModal] = useState(false)
 
-  // Datos dummy de flash cards
-  const flashCards: FlashCard[] = [
-    {
-      id: "1",
-      question: "¿Qué es React Native?",
-      answer:
-        "React Native es un framework de desarrollo móvil que permite crear aplicaciones nativas para iOS y Android usando JavaScript y React.",
-      category: "Desarrollo Móvil",
-    },
-    {
-      id: "2",
-      question: "¿Qué es una función asíncrona?",
-      answer:
-        "Una función asíncrona es una función que opera de manera asíncrona mediante el event loop, usando una sintaxis async/await para manejar promesas.",
-      category: "JavaScript",
-    },
-    {
-      id: "3",
-      question: "¿Qué es un hook en React?",
-      answer:
-        "Los hooks son funciones especiales que permiten usar estado y otras características de React sin escribir una clase. Ejemplos: useState, useEffect.",
-      category: "React",
-    },
-    {
-      id: "4",
-      question: "¿Qué es TypeScript?",
-      answer:
-        "TypeScript es un superset de JavaScript que añade tipado estático opcional. Compila a JavaScript puro y mejora la detección de errores.",
-      category: "TypeScript",
-    },
-    {
-      id: "5",
-      question: "¿Qué es una API REST?",
-      answer:
-        "API REST es un estilo arquitectónico para servicios web que usa HTTP y sus métodos (GET, POST, PUT, DELETE) para interactuar con recursos.",
-      category: "Backend",
-    },
-    {
-      id: "6",
-      question: "¿Qué es Supabase?",
-      answer:
-        "Supabase es una alternativa open-source a Firebase que proporciona base de datos PostgreSQL, autenticación, storage y realtime subscriptions.",
-      category: "Backend",
-    },
-  ]
+  // Función para generar recursos con IA (endpoint dummy por ahora)
+  const handleGenerateResources = async () => {
+    if (!currentClassroom?.id) {
+      Alert.alert('Error', 'No hay salón seleccionado')
+      return
+    }
 
-  // Datos dummy de mapas mentales
-  const mindMaps: MindMap[] = [
-    {
-      id: "1",
-      title: "Arquitectura de React Native",
-      topic: "Desarrollo Móvil",
-      nodes: 12,
-    },
-    {
-      id: "2",
-      title: "Conceptos de JavaScript ES6+",
-      topic: "JavaScript",
-      nodes: 18,
-    },
-    {
-      id: "3",
-      title: "Hooks de React",
-      topic: "React",
-      nodes: 10,
-    },
-    {
-      id: "4",
-      title: "Tipos avanzados en TypeScript",
-      topic: "TypeScript",
-      nodes: 15,
-    },
-    {
-      id: "5",
-      title: "Patrones de diseño REST",
-      topic: "Backend",
-      nodes: 8,
-    },
-  ]
+    setLoading(true)
+    
+    try {
+      // TODO: Reemplazar con el endpoint real
+      // const response = await fetch(`TU_ENDPOINT/generate_resources?classroom_id=${currentClassroom.id}`)
+      // const data = await response.json()
+      
+      // Datos dummy que simulan la respuesta del endpoint
+      await new Promise(resolve => setTimeout(resolve, 2000)) // Simular delay de red
+      
+      const dummyResponse: ResourcesResponse = {
+        success: true,
+        message: "Recursos generados exitosamente",
+        resources: {
+          summary: "Esta clase introduce el concepto de redes neuronales artificiales como modelos inspirados en el cerebro humano para el procesamiento de información. Se abordan dos paradigmas fundamentales de aprendizaje automático: el aprendizaje supervisado, que se basa en datos etiquetados para entrenar modelos predictivos, y el clustering, una técnica no supervisada que agrupa datos similares en función de sus características inherentes.",
+          key_concepts: [
+            {
+              concept: "Red Neuronal Artificial (RNA)",
+              definition: "Modelo computacional inspirado en la estructura y función del cerebro humano, compuesto por nodos (neuronas) interconectados que procesan y transmiten información.",
+              importance: "Las RNA son fundamentales para el aprendizaje automático y la inteligencia artificial, permitiendo resolver problemas complejos como clasificación, regresión y reconocimiento de patrones."
+            },
+            {
+              concept: "Aprendizaje Supervisado",
+              definition: "Paradigma de aprendizaje automático donde el modelo se entrena utilizando datos etiquetados, es decir, datos que incluyen tanto las características de entrada como la salida deseada.",
+              importance: "Permite crear modelos predictivos precisos para diversas tareas, como clasificación (predecir categorías) y regresión (predecir valores numéricos)."
+            },
+            {
+              concept: "Clustering",
+              definition: "Técnica de aprendizaje automático no supervisado que agrupa datos similares en clústeres, basándose en la similitud de sus características, sin necesidad de datos etiquetados.",
+              importance: "Útil para descubrir patrones ocultos en los datos, segmentar clientes, identificar anomalías y explorar la estructura subyacente de los datos."
+            }
+          ],
+          study_tips: [
+            "Compara y contrasta los diferentes paradigmas de aprendizaje (supervisado vs no supervisado). Considera las ventajas y desventajas de cada uno.",
+            "Visualiza ejemplos concretos de aplicaciones para cada concepto. Piensa en cómo se usan las redes neuronales, el aprendizaje supervisado y el clustering en el mundo real."
+          ],
+          suggested_exercises: [
+            {
+              exercise: "Imagina una base de datos de películas con atributos como género, director, actores, etc. Describe cómo podrías usar el clustering para segmentar las películas en grupos similares.",
+              difficulty: "Fácil",
+              objective: "Comprender la aplicación práctica del clustering en un escenario real."
+            },
+            {
+              exercise: "Investiga y describe brevemente tres algoritmos populares de clustering (e.g., K-means, Clustering Jerárquico, DBSCAN) y compara sus características.",
+              difficulty: "Intermedio",
+              objective: "Profundizar en los algoritmos de clustering y entender sus diferencias."
+            },
+            {
+              exercise: "Diseña un diagrama de flujo que represente el proceso de entrenamiento de una red neuronal para un problema de clasificación de imágenes. Incluye los pasos clave como la recolección de datos etiquetados, la definición de la arquitectura de la red, la optimización y la evaluación del modelo.",
+              difficulty: "Avanzado",
+              objective: "Comprender el proceso completo de entrenamiento de una red neuronal supervisada."
+            }
+          ],
+          recommended_readings: [
+            "Introducción al Aprendizaje Automático de Ethem Alpaydin",
+            "Deep Learning de Ian Goodfellow, Yoshua Bengio y Aaron Courville"
+          ]
+        },
+        classroom_id: currentClassroom.id,
+        chunks_analyzed: 3
+      }
 
-  const handleCardPress = (card: FlashCard) => {
-    setSelectedCard(card)
-    setIsFlipped(false)
-    setShowCardModal(true)
+      if (dummyResponse.success) {
+        setResources(dummyResponse.resources)
+        Alert.alert('¡Éxito!', `Recursos generados basados en ${dummyResponse.chunks_analyzed} documentos`)
+      } else {
+        Alert.alert('Error', dummyResponse.message)
+      }
+    } catch (error) {
+      console.error('Error generando recursos:', error)
+      Alert.alert('Error', 'No se pudieron generar los recursos')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleFlipCard = () => {
-    setIsFlipped(!isFlipped)
+  const handleConceptPress = (concept: KeyConcept) => {
+    setSelectedConcept(concept)
+    setShowConceptModal(true)
   }
 
-  const handleGenerateFlashCards = () => {
-    // Aquí se conectaría con la IA para generar flash cards
-    console.log("Generando flash cards con IA...")
-  }
-
-  const handleGenerateMindMap = () => {
-    // Aquí se conectaría con la IA para generar mapas mentales
-    console.log("Generando mapa mental con IA...")
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty.toLowerCase()) {
+      case 'fácil':
+        return '#10B981'
+      case 'intermedio':
+        return '#F59E0B'
+      case 'avanzado':
+        return '#EF4444'
+      default:
+        return '#6366F1'
+    }
   }
 
   if (!currentClassroom) {
@@ -145,133 +178,190 @@ export default function ResourcesScreen() {
         <Text style={styles.headerSubtitle}>Generados con Inteligencia Artificial</Text>
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        <Pressable
-          style={[styles.tab, selectedTab === "flashcards" && styles.tabActive]}
-          onPress={() => setSelectedTab("flashcards")}
-        >
-          <MaterialIcons
-            name="style"
-            size={20}
-            color={selectedTab === "flashcards" ? "#FFFFFF" : "rgba(255, 255, 255, 0.6)"}
-          />
-          <Text style={[styles.tabText, selectedTab === "flashcards" && styles.tabTextActive]}>Flash Cards</Text>
-        </Pressable>
-
-        <Pressable
-          style={[styles.tab, selectedTab === "mindmaps" && styles.tabActive]}
-          onPress={() => setSelectedTab("mindmaps")}
-        >
-          <MaterialIcons
-            name="account-tree"
-            size={20}
-            color={selectedTab === "mindmaps" ? "#FFFFFF" : "rgba(255, 255, 255, 0.6)"}
-          />
-          <Text style={[styles.tabText, selectedTab === "mindmaps" && styles.tabTextActive]}>Mapas Mentales</Text>
-        </Pressable>
-      </View>
-
       {/* Botón de generar con IA */}
       <Pressable
         style={styles.generateButton}
-        onPress={selectedTab === "flashcards" ? handleGenerateFlashCards : handleGenerateMindMap}
+        onPress={handleGenerateResources}
+        disabled={loading}
       >
-        <LinearGradient colors={["#6366F1", "#8B5CF6"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.generateGradient}>
-          <MaterialIcons name="auto-awesome" size={24} color="#FFFFFF" />
-          <Text style={styles.generateButtonText}>
-            Generar {selectedTab === "flashcards" ? "Flash Cards" : "Mapa Mental"} con IA
-          </Text>
+        <LinearGradient 
+          colors={loading ? ["#4B5563", "#6B7280"] : ["#6366F1", "#8B5CF6"]} 
+          start={{ x: 0, y: 0 }} 
+          end={{ x: 1, y: 1 }} 
+          style={styles.generateGradient}
+        >
+          {loading ? (
+            <>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text style={styles.generateButtonText}>Generando recursos...</Text>
+            </>
+          ) : (
+            <>
+              <MaterialIcons name="auto-awesome" size={24} color="#FFFFFF" />
+              <Text style={styles.generateButtonText}>Generar Recursos con IA</Text>
+            </>
+          )}
         </LinearGradient>
       </Pressable>
 
-      {/* Contenido según tab seleccionado */}
-      {selectedTab === "flashcards" ? (
-        <View style={styles.content}>
-          <Text style={styles.sectionTitle}>💡 Tus Flash Cards ({flashCards.length})</Text>
-          <View style={styles.cardsGrid}>
-            {flashCards.map((card) => (
-              <Pressable
-                key={card.id}
-                style={({ pressed }) => [styles.flashCard, { opacity: pressed ? 0.8 : 1 }]}
-                onPress={() => handleCardPress(card)}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={styles.cardCategory}>
-                    <Text style={styles.cardCategoryText}>{card.category}</Text>
-                  </View>
-                  <MaterialIcons name="flip" size={20} color="rgba(255, 255, 255, 0.4)" />
-                </View>
-                <Text style={styles.cardQuestion} numberOfLines={3}>
-                  {card.question}
-                </Text>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.cardFooterText}>Toca para voltear</Text>
-                  <MaterialIcons name="touch-app" size={16} color="rgba(255, 255, 255, 0.4)" />
-                </View>
-              </Pressable>
-            ))}
-          </View>
+      {!resources ? (
+        <View style={styles.emptyState}>
+          <MaterialIcons name="lightbulb-outline" size={80} color="rgba(255, 255, 255, 0.2)" />
+          <Text style={styles.emptyTitle}>No hay recursos generados</Text>
+          <Text style={styles.emptySubtitle}>
+            Presiona el botón de arriba para generar recursos de estudio personalizados con IA
+          </Text>
         </View>
       ) : (
-        <View style={styles.content}>
-          <Text style={styles.sectionTitle}>🧠 Tus Mapas Mentales ({mindMaps.length})</Text>
-          <View style={styles.mindMapsList}>
-            {mindMaps.map((mindMap) => (
-              <Pressable
-                key={mindMap.id}
-                style={({ pressed }) => [styles.mindMapCard, { opacity: pressed ? 0.8 : 1 }]}
-                onPress={() => console.log("Ver mapa mental:", mindMap.id)}
-              >
-                <LinearGradient
-                  colors={["rgba(99, 102, 241, 0.2)", "rgba(139, 92, 246, 0.2)"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.mindMapGradient}
-                >
-                  <View style={styles.mindMapIcon}>
-                    <MaterialIcons name="account-tree" size={32} color="#6366F1" />
-                  </View>
-                  <View style={styles.mindMapInfo}>
-                    <Text style={styles.mindMapTitle}>{mindMap.title}</Text>
-                    <Text style={styles.mindMapTopic}>{mindMap.topic}</Text>
-                    <View style={styles.mindMapStats}>
-                      <MaterialIcons name="blur-on" size={14} color="rgba(255, 255, 255, 0.5)" />
-                      <Text style={styles.mindMapNodes}>{mindMap.nodes} nodos</Text>
-                    </View>
-                  </View>
-                  <MaterialIcons name="arrow-forward" size={24} color="rgba(255, 255, 255, 0.4)" />
-                </LinearGradient>
-              </Pressable>
-            ))}
+        <>
+          {/* Tabs */}
+          <View style={styles.tabs}>
+            <Pressable
+              style={[styles.tab, selectedTab === "summary" && styles.tabActive]}
+              onPress={() => setSelectedTab("summary")}
+            >
+              <MaterialIcons
+                name="subject"
+                size={20}
+                color={selectedTab === "summary" ? "#FFFFFF" : "rgba(255, 255, 255, 0.6)"}
+              />
+              <Text style={[styles.tabText, selectedTab === "summary" && styles.tabTextActive]}>Resumen</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.tab, selectedTab === "concepts" && styles.tabActive]}
+              onPress={() => setSelectedTab("concepts")}
+            >
+              <MaterialIcons
+                name="lightbulb"
+                size={20}
+                color={selectedTab === "concepts" ? "#FFFFFF" : "rgba(255, 255, 255, 0.6)"}
+              />
+              <Text style={[styles.tabText, selectedTab === "concepts" && styles.tabTextActive]}>
+                Conceptos ({resources.key_concepts.length})
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.tab, selectedTab === "exercises" && styles.tabActive]}
+              onPress={() => setSelectedTab("exercises")}
+            >
+              <MaterialIcons
+                name="fitness-center"
+                size={20}
+                color={selectedTab === "exercises" ? "#FFFFFF" : "rgba(255, 255, 255, 0.6)"}
+              />
+              <Text style={[styles.tabText, selectedTab === "exercises" && styles.tabTextActive]}>
+                Ejercicios ({resources.suggested_exercises.length})
+              </Text>
+            </Pressable>
           </View>
-        </View>
+
+          {/* Contenido según tab seleccionado */}
+          {selectedTab === "summary" && (
+            <View style={styles.content}>
+              <Text style={styles.sectionTitle}>� Resumen</Text>
+              <View style={styles.summaryCard}>
+                <Text style={styles.summaryText}>{resources.summary}</Text>
+              </View>
+
+              <Text style={styles.sectionTitle}>💡 Tips de Estudio</Text>
+              {resources.study_tips.map((tip, index) => (
+                <View key={index} style={styles.tipCard}>
+                  <View style={styles.tipNumber}>
+                    <Text style={styles.tipNumberText}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.tipText}>{tip}</Text>
+                </View>
+              ))}
+
+              <Text style={styles.sectionTitle}>📖 Lecturas Recomendadas</Text>
+              {resources.recommended_readings.map((reading, index) => (
+                <View key={index} style={styles.readingCard}>
+                  <MaterialIcons name="menu-book" size={24} color="#6366F1" />
+                  <Text style={styles.readingText}>{reading}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {selectedTab === "concepts" && (
+            <View style={styles.content}>
+              <Text style={styles.sectionTitle}>🎯 Conceptos Clave</Text>
+              <View style={styles.conceptsGrid}>
+                {resources.key_concepts.map((concept, index) => (
+                  <Pressable
+                    key={index}
+                    style={({ pressed }) => [styles.conceptCard, { opacity: pressed ? 0.8 : 1 }]}
+                    onPress={() => handleConceptPress(concept)}
+                  >
+                    <View style={styles.conceptHeader}>
+                      <MaterialIcons name="star" size={20} color="#F59E0B" />
+                      <Text style={styles.conceptTitle}>{concept.concept}</Text>
+                    </View>
+                    <Text style={styles.conceptDefinition} numberOfLines={3}>
+                      {concept.definition}
+                    </Text>
+                    <View style={styles.conceptFooter}>
+                      <Text style={styles.conceptFooterText}>Toca para ver más</Text>
+                      <MaterialIcons name="arrow-forward" size={16} color="rgba(255, 255, 255, 0.4)" />
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {selectedTab === "exercises" && (
+            <View style={styles.content}>
+              <Text style={styles.sectionTitle}>🏋️ Ejercicios Sugeridos</Text>
+              {resources.suggested_exercises.map((exercise, index) => (
+                <View key={index} style={styles.exerciseCard}>
+                  <View style={styles.exerciseHeader}>
+                    <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(exercise.difficulty) + '33' }]}>
+                      <Text style={[styles.difficultyText, { color: getDifficultyColor(exercise.difficulty) }]}>
+                        {exercise.difficulty}
+                      </Text>
+                    </View>
+                    <MaterialIcons name="assignment" size={20} color="rgba(255, 255, 255, 0.6)" />
+                  </View>
+                  <Text style={styles.exerciseText}>{exercise.exercise}</Text>
+                  <View style={styles.exerciseObjective}>
+                    <MaterialIcons name="flag" size={16} color="#6366F1" />
+                    <Text style={styles.exerciseObjectiveText}>{exercise.objective}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </>
       )}
 
-      {/* Modal de Flash Card */}
-      <Modal visible={showCardModal} transparent animationType="fade" onRequestClose={() => setShowCardModal(false)}>
+      {/* Modal de Concepto */}
+      <Modal visible={showConceptModal} transparent animationType="fade" onRequestClose={() => setShowConceptModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Pressable style={styles.modalClose} onPress={() => setShowCardModal(false)}>
+            <Pressable style={styles.modalClose} onPress={() => setShowConceptModal(false)}>
               <MaterialIcons name="close" size={24} color="#FFFFFF" />
             </Pressable>
 
-            {selectedCard && (
-              <Pressable style={styles.modalCard} onPress={handleFlipCard}>
-                <View style={styles.modalCardCategory}>
-                  <Text style={styles.modalCardCategoryText}>{selectedCard.category}</Text>
+            {selectedConcept && (
+              <View style={styles.modalCard}>
+                <View style={styles.modalConceptHeader}>
+                  <MaterialIcons name="star" size={32} color="#F59E0B" />
+                  <Text style={styles.modalConceptTitle}>{selectedConcept.concept}</Text>
                 </View>
 
-                <View style={styles.modalCardContent}>
-                  <Text style={styles.modalCardLabel}>{isFlipped ? "RESPUESTA" : "PREGUNTA"}</Text>
-                  <Text style={styles.modalCardText}>{isFlipped ? selectedCard.answer : selectedCard.question}</Text>
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionLabel}>DEFINICIÓN</Text>
+                  <Text style={styles.modalSectionText}>{selectedConcept.definition}</Text>
                 </View>
 
-                <View style={styles.modalCardFooter}>
-                  <MaterialIcons name="flip" size={20} color="rgba(255, 255, 255, 0.6)" />
-                  <Text style={styles.modalCardFooterText}>Toca para voltear</Text>
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionLabel}>IMPORTANCIA</Text>
+                  <Text style={styles.modalSectionText}>{selectedConcept.importance}</Text>
                 </View>
-              </Pressable>
+              </View>
             )}
           </View>
         </View>
@@ -493,54 +583,190 @@ const styles = StyleSheet.create({
     padding: 32,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
-    minHeight: 300,
+  },
+  // Nuevos estilos
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 80,
+    gap: 16,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.6)",
+    textAlign: "center",
+    maxWidth: 300,
+    lineHeight: 24,
+  },
+  summaryCard: {
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.3)",
+  },
+  summaryText: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    lineHeight: 26,
+  },
+  tipCard: {
+    flexDirection: "row",
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
+    borderRadius: 16,
+    padding: 16,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.3)",
+  },
+  tipNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(139, 92, 246, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tipNumberText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#8B5CF6",
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 15,
+    color: "#FFFFFF",
+    lineHeight: 22,
+  },
+  readingCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  readingText: {
+    flex: 1,
+    fontSize: 15,
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  conceptsGrid: {
+    gap: 16,
+  },
+  conceptCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  conceptHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  conceptTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  conceptDefinition: {
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.8)",
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  conceptFooter: {
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
   },
-  modalCardCategory: {
-    backgroundColor: "rgba(99, 102, 241, 0.2)",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignSelf: "flex-start",
-    marginBottom: 24,
-  },
-  modalCardCategoryText: {
+  conceptFooterText: {
     fontSize: 13,
+    color: "rgba(255, 255, 255, 0.4)",
+    fontStyle: "italic",
+  },
+  exerciseCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    gap: 12,
+  },
+  exerciseHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  difficultyBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  difficultyText: {
+    fontSize: 12,
     fontWeight: "700",
-    color: "#6366F1",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  modalCardContent: {
-    flex: 1,
-    justifyContent: "center",
-    gap: 20,
+  exerciseText: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    lineHeight: 24,
   },
-  modalCardLabel: {
+  exerciseObjective: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    padding: 12,
+    borderRadius: 12,
+  },
+  exerciseObjectiveText: {
+    flex: 1,
     fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
+    lineHeight: 20,
+  },
+  modalConceptHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 24,
+  },
+  modalConceptTitle: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  modalSection: {
+    marginBottom: 24,
+  },
+  modalSectionLabel: {
+    fontSize: 12,
     fontWeight: "700",
     color: "rgba(255, 255, 255, 0.5)",
     textTransform: "uppercase",
     letterSpacing: 1,
-    textAlign: "center",
+    marginBottom: 12,
   },
-  modalCardText: {
-    fontSize: 20,
-    fontWeight: "600",
+  modalSectionText: {
+    fontSize: 16,
     color: "#FFFFFF",
-    lineHeight: 32,
-    textAlign: "center",
-  },
-  modalCardFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 24,
-  },
-  modalCardFooterText: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.6)",
-    fontStyle: "italic",
+    lineHeight: 26,
   },
 })
