@@ -309,7 +309,7 @@ export default function ClassroomOverview() {
             </View>
           </Pressable>
 
-          <Pressable style={styles.actionCard} onPress={() => router.push("/(drawer)/cubicle")}>
+          <Pressable style={styles.actionCard} onPress={() => router.push("/(drawer)/(stackcubicle)")}>
             <View style={[styles.actionCardContent, styles.actionCardTertiary]}>
               <MaterialIcons name="groups" size={28} color="#F59E0B" />
               <Text style={[styles.actionCardTitle, styles.actionCardTitleDark]}>Cubículo</Text>

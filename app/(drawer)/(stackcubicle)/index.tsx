@@ -149,7 +149,7 @@ export default function CubicleScreen() {
       setActiveSessionId(sessionId);
       await loadSessionMembers();
 
-      router.push('/(drawer)/cubicleChat');
+      router.push('/cubicleChat');
     } catch (error: any) {
       console.error('Error joining cubicle:', error);
       Alert.alert('Error', error.message || 'No se pudo unir al cubículo');
@@ -256,7 +256,7 @@ export default function CubicleScreen() {
               ) : (
                 <>
                   <Pressable 
-                    onPress={() => router.push('/(drawer)/cubicleChat')} 
+                    onPress={() => router.push('/cubicleChat')} 
                     style={[styles.button, styles.chatButton]}
                   >
                     <MaterialIcons name="chat" size={20} color="#fff" />

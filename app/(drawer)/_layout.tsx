@@ -39,7 +39,7 @@ function CustomDrawerContent() {
     { title: "Resumen", path: "/(drawer)/overview", icon: "analytics-outline" },
     { title: "EstudIA", path: "/(drawer)/estudia", icon: "school-outline" },
     { title: "Recursos", path: "/(drawer)/resources", icon: "library-outline" },
-    { title: "Cubículo", path: "/(drawer)/cubicle", icon: "business-outline" },
+    { title: "Cubículo", path: "/(drawer)/(stackcubicle)", icon: "business-outline" },
     { title: "Subir Documentos", path: "/(drawer)/upload", icon: "cloud-upload-outline" },
   ];
 
@@ -68,7 +68,7 @@ function CustomDrawerContent() {
                   if (item.path === "/homepage") {
                     router.replace("/homepage");
                   } else {
-                    router.push(item.path as any);
+                    router.navigate(item.path as any);
                   }
                 }}
               >
@@ -164,9 +164,8 @@ export default function DrawerLayout() {
       <Drawer.Screen name="overview" />
       <Drawer.Screen name="estudia" />
       <Drawer.Screen name="resources" />
-      <Drawer.Screen name="cubicle" />
+      <Drawer.Screen name="(stackcubicle)" />
       <Drawer.Screen name="upload" />
-      <Drawer.Screen name="cubicleChat" />
       <Drawer.Screen name="[classroomId]" />
     </Drawer>
   );
