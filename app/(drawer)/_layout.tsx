@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Drawer } from 'expo-router/drawer';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, usePathname, useSegments } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useClassroom } from '@/context/ClassroomContext';
@@ -10,6 +10,8 @@ import * as Haptics from 'expo-haptics';
 function CustomDrawerContent() {
   const { logout, user } = useAuth();
   const { currentClassroom } = useClassroom();
+  const pathname = usePathname();
+  const segments = useSegments();
 
   const handleLogout = async () => {
     if (Haptics?.impactAsync) {
@@ -43,6 +45,36 @@ function CustomDrawerContent() {
     { title: "Subir Documentos", path: "/(drawer)/upload", icon: "cloud-upload-outline" },
   ];
 
+  const isActiveRoute = (itemPath: string) => {
+    // Convertir segments en string para facilitar comparación
+    const currentRoute = segments.join('/');
+    
+    console.log("Checking active route:", { itemPath, pathname, segments, currentRoute });
+    
+    // Casos especiales por ruta
+    if (itemPath === "/(drawer)/(stackcubicle)") {
+      return currentRoute.includes("stackcubicle") || (segments as string[]).includes("(stackcubicle)");
+    }
+    
+    if (itemPath === "/(drawer)/overview") {
+      return currentRoute.includes("overview") || (segments as string[]).includes("overview");
+    }
+    
+    if (itemPath === "/(drawer)/estudia") {
+      return currentRoute.includes("estudia") || (segments as string[]).includes("estudia");
+    }
+    
+    if (itemPath === "/(drawer)/resources") {
+      return currentRoute.includes("resources") || (segments as string[]).includes("resources");
+    }
+    
+    if (itemPath === "/(drawer)/upload") {
+      return currentRoute.includes("upload") || (segments as string[]).includes("upload");
+    }
+    
+    return false;
+  };
+
   return (
     <View style={styles.drawerContainer}>
       <View style={styles.titleContainer}>
@@ -57,27 +89,42 @@ function CustomDrawerContent() {
 
         <View>
           <View style={styles.divider} />
-          {menuItems.map((item, index) => (
-            <View key={index}>
-              <TouchableOpacity 
-                style={styles.menuItemContainer}
-                onPress={() => {
-                  if (Haptics?.impactAsync) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  if (item.path === "/homepage") {
-                    router.replace("/homepage");
-                  } else {
-                    router.navigate(item.path as any);
-                  }
-                }}
-              >
-                <Ionicons name={item.icon as any} size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.drawerItem}>{item.title}</Text>
-              </TouchableOpacity>
-              {index < menuItems.length - 1 && <View style={styles.dividerItems} />}
-            </View>
-          ))}
+          {menuItems.map((item, index) => {
+            const isActive = isActiveRoute(item.path);
+            return (
+              <View key={index}>
+                <TouchableOpacity 
+                  style={[
+                    styles.menuItemContainer,
+                    isActive && styles.menuItemActive
+                  ]}
+                  onPress={() => {
+                    if (Haptics?.impactAsync) {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    if (item.path === "/homepage") {
+                      router.replace("/homepage");
+                    } else {
+                      router.navigate(item.path as any);
+                    }
+                  }}
+                >
+                  <Ionicons 
+                    name={item.icon as any} 
+                    size={20} 
+                    color={isActive ? "#6366F1" : "rgba(255, 255, 255, 0.8)"} 
+                  />
+                  <Text style={[
+                    styles.drawerItem,
+                    isActive && styles.drawerItemActive
+                  ]}>
+                    {item.title}
+                  </Text>
+                </TouchableOpacity>
+                {index < menuItems.length - 1 && <View style={styles.dividerItems} />}
+              </View>
+            );
+          })}
         </View>
       </View>
       
@@ -117,6 +164,10 @@ export default function DrawerLayout() {
   const { user } = useAuth();
   const { currentClassroom, loadClassroom } = useClassroom();
   const [classroomName, setClassroomName] = useState('EstudIA');
+  const segments = useSegments();
+
+  // Verificar si estamos en cubicleChat
+  const isInCubicleChat = (segments as string[]).includes('cubicleChat');
 
   useEffect(() => {
     if (classroomId && user) {
@@ -147,6 +198,7 @@ export default function DrawerLayout() {
   return (
     <Drawer
       screenOptions={{
+        headerShown: !isInCubicleChat,
         headerStyle: {
           backgroundColor: '#0A0A0F',
           borderBottomWidth: 1,
@@ -220,10 +272,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 12,
   },
+  menuItemActive: {
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    borderLeftWidth: 3,
+    borderLeftColor: "#6366F1",
+  },
   drawerItem: {
     fontSize: 16, 
     fontWeight: "600", 
     color: "#FFFFFF",
+  },
+  drawerItemActive: {
+    color: "#6366F1",
+    fontWeight: "700",
   },
   logoutButton: {
     flexDirection: "row",

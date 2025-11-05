@@ -1,10 +1,7 @@
 import { Stack } from "expo-router";
 import React from "react";
-import { TouchableOpacity, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, DrawerActions } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
-import { Platform } from "react-native";
 export default function stackprofile() {
     const navigation = useNavigation();
 
