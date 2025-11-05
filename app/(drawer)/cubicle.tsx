@@ -1,4 +1,3 @@
-import { ScrollableTabView } from '@/components/scrollable-tab-view';
 import { StyleSheet, Text, View, Pressable, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useClassroom } from '@/context/ClassroomContext';
 import { useAuth } from '@/context/AuthContext';
