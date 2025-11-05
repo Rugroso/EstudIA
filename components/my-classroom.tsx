@@ -15,6 +15,7 @@ import {
   View
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface Classroom {
   id: string;
@@ -286,6 +287,7 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
       }
     >
       <View style={styles.header}>
+        <MaterialIcons name="workspaces" size={48} color="#FFF" />
         <Text style={styles.title}>Mis Salones</Text>
         <Text style={styles.subtitle}>
           {classrooms.length === 0 
@@ -404,15 +406,19 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   header: {
-    padding: 20,
-    paddingTop: 60,
     alignItems: 'center',
+    marginBottom: 32,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(99, 102, 241, 0.2)',
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
     color: '#FFFFFF',
+    marginTop: 16,
     marginBottom: 8,
+    textAlign: 'center',
     letterSpacing: -0.5,
   },
   subtitle: {

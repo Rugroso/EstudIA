@@ -6,6 +6,7 @@ import { Text, View, StyleSheet, Pressable, Modal, ActivityIndicator, Alert } fr
 import { MaterialIcons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { useClassroom } from "@/context/ClassroomContext"
+import { useAuth } from "@/context/AuthContext"
 
 interface KeyConcept {
   concept: string
@@ -27,12 +28,31 @@ interface GeneratedResources {
   recommended_readings: string[]
 }
 
-interface ResourcesResponse {
+interface ResourcesAPIResponse {
   success: boolean
-  message: string
-  resources: GeneratedResources
-  classroom_id: string
-  chunks_analyzed: number
+  data: {
+    content: Array<{
+      type: string
+      text: string
+    }>
+    structuredContent: {
+      success: boolean
+      message?: string
+      error?: string
+      resources?: GeneratedResources
+      classroom_id?: string
+      chunks_analyzed?: number
+    }
+    isError: boolean
+  }
+  source: string
+  timestamp: string
+  metadata: {
+    classroom_id: string
+    resource_type: string
+    user_id: string
+    topic: string
+  }
 }
 
 interface FlashCard {
@@ -51,6 +71,7 @@ interface MindMap {
 
 export default function ResourcesScreen() {
   const { currentClassroom } = useClassroom()
+  const { user } = useAuth()
   const [selectedTab, setSelectedTab] = useState<"summary" | "concepts" | "exercises">("summary")
   const [selectedCard, setSelectedCard] = useState<FlashCard | null>(null)
   const [isFlipped, setIsFlipped] = useState(false)
@@ -60,84 +81,81 @@ export default function ResourcesScreen() {
   const [selectedConcept, setSelectedConcept] = useState<KeyConcept | null>(null)
   const [showConceptModal, setShowConceptModal] = useState(false)
 
-  // Función para generar recursos con IA (endpoint dummy por ahora)
+  // Función para generar recursos con IA
   const handleGenerateResources = async () => {
     if (!currentClassroom?.id) {
       Alert.alert('Error', 'No hay salón seleccionado')
       return
     }
 
+    if (!user?.id) {
+      Alert.alert('Error', 'Usuario no autenticado')
+      return
+    }
+
     setLoading(true)
     
     try {
-      // TODO: Reemplazar con el endpoint real
-      // const response = await fetch(`TU_ENDPOINT/generate_resources?classroom_id=${currentClassroom.id}`)
-      // const data = await response.json()
-      
-      // Datos dummy que simulan la respuesta del endpoint
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simular delay de red
-      
-      const dummyResponse: ResourcesResponse = {
-        success: true,
-        message: "Recursos generados exitosamente",
-        resources: {
-          summary: "Esta clase introduce el concepto de redes neuronales artificiales como modelos inspirados en el cerebro humano para el procesamiento de información. Se abordan dos paradigmas fundamentales de aprendizaje automático: el aprendizaje supervisado, que se basa en datos etiquetados para entrenar modelos predictivos, y el clustering, una técnica no supervisada que agrupa datos similares en función de sus características inherentes.",
-          key_concepts: [
-            {
-              concept: "Red Neuronal Artificial (RNA)",
-              definition: "Modelo computacional inspirado en la estructura y función del cerebro humano, compuesto por nodos (neuronas) interconectados que procesan y transmiten información.",
-              importance: "Las RNA son fundamentales para el aprendizaje automático y la inteligencia artificial, permitiendo resolver problemas complejos como clasificación, regresión y reconocimiento de patrones."
-            },
-            {
-              concept: "Aprendizaje Supervisado",
-              definition: "Paradigma de aprendizaje automático donde el modelo se entrena utilizando datos etiquetados, es decir, datos que incluyen tanto las características de entrada como la salida deseada.",
-              importance: "Permite crear modelos predictivos precisos para diversas tareas, como clasificación (predecir categorías) y regresión (predecir valores numéricos)."
-            },
-            {
-              concept: "Clustering",
-              definition: "Técnica de aprendizaje automático no supervisado que agrupa datos similares en clústeres, basándose en la similitud de sus características, sin necesidad de datos etiquetados.",
-              importance: "Útil para descubrir patrones ocultos en los datos, segmentar clientes, identificar anomalías y explorar la estructura subyacente de los datos."
-            }
-          ],
-          study_tips: [
-            "Compara y contrasta los diferentes paradigmas de aprendizaje (supervisado vs no supervisado). Considera las ventajas y desventajas de cada uno.",
-            "Visualiza ejemplos concretos de aplicaciones para cada concepto. Piensa en cómo se usan las redes neuronales, el aprendizaje supervisado y el clustering en el mundo real."
-          ],
-          suggested_exercises: [
-            {
-              exercise: "Imagina una base de datos de películas con atributos como género, director, actores, etc. Describe cómo podrías usar el clustering para segmentar las películas en grupos similares.",
-              difficulty: "Fácil",
-              objective: "Comprender la aplicación práctica del clustering en un escenario real."
-            },
-            {
-              exercise: "Investiga y describe brevemente tres algoritmos populares de clustering (e.g., K-means, Clustering Jerárquico, DBSCAN) y compara sus características.",
-              difficulty: "Intermedio",
-              objective: "Profundizar en los algoritmos de clustering y entender sus diferencias."
-            },
-            {
-              exercise: "Diseña un diagrama de flujo que represente el proceso de entrenamiento de una red neuronal para un problema de clasificación de imágenes. Incluye los pasos clave como la recolección de datos etiquetados, la definición de la arquitectura de la red, la optimización y la evaluación del modelo.",
-              difficulty: "Avanzado",
-              objective: "Comprender el proceso completo de entrenamiento de una red neuronal supervisada."
-            }
-          ],
-          recommended_readings: [
-            "Introducción al Aprendizaje Automático de Ethem Alpaydin",
-            "Deep Learning de Ian Goodfellow, Yoshua Bengio y Aaron Courville"
-          ]
+      const response = await fetch('https://d8pgui6dhb.execute-api.us-east-2.amazonaws.com/generate-resources', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        classroom_id: currentClassroom.id,
-        chunks_analyzed: 3
+        body: JSON.stringify({
+          //classroom_id: currentClassroom.id,
+          //resource_type: "pdf",
+          //user_id: user.id,
+          //topic: currentClassroom.name || "Material del salón",
+          //source_document_ids: [] // Array vacío por ahora, se puede llenar después
+          "classroom_id": "0185c8b6-6774-4cd2-b0aa-76a018f072a7",
+          "resource_type": "pdf",
+          "user_id": "789e0123-e89b-12d3-a456-426614174999",
+          "topic": "",
+          "source_document_ids": []
+        })
+      })
+
+      const apiResponse: ResourcesAPIResponse = await response.json()
+
+      console.log('📄 [Resources] API Response:', apiResponse)
+
+      // Verificar si la respuesta externa fue exitosa
+      if (!apiResponse.success) {
+        Alert.alert('Error', 'Error al conectar con el servidor')
+        return
       }
 
-      if (dummyResponse.success) {
-        setResources(dummyResponse.resources)
-        Alert.alert('¡Éxito!', `Recursos generados basados en ${dummyResponse.chunks_analyzed} documentos`)
-      } else {
-        Alert.alert('Error', dummyResponse.message)
+      // Verificar si hay error en los datos
+      if (apiResponse.data.isError) {
+        Alert.alert('Error', 'Ocurrió un error al generar los recursos')
+        return
       }
+
+      // Verificar el contenido estructurado
+      const structuredContent = apiResponse.data.structuredContent
+
+      if (!structuredContent.success) {
+        const errorMessage = structuredContent.error || structuredContent.message || 'Error desconocido'
+        Alert.alert('Error', `No se pudieron generar los recursos: ${errorMessage}`)
+        return
+      }
+
+      // Verificar que tenemos los recursos
+      if (!structuredContent.resources) {
+        Alert.alert('Error', 'No se recibieron recursos del servidor')
+        return
+      }
+
+      // Todo bien, guardar los recursos
+      setResources(structuredContent.resources)
+      Alert.alert(
+        '¡Éxito!', 
+        `Recursos generados exitosamente${structuredContent.chunks_analyzed ? ` basados en ${structuredContent.chunks_analyzed} documentos` : ''}`
+      )
+
     } catch (error) {
-      console.error('Error generando recursos:', error)
-      Alert.alert('Error', 'No se pudieron generar los recursos')
+      console.error('❌ [Resources] Error:', error)
+      Alert.alert('Error', 'No se pudieron generar los recursos. Verifica tu conexión.')
     } finally {
       setLoading(false)
     }
@@ -174,7 +192,8 @@ export default function ResourcesScreen() {
     <ScrollableTabView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>📚 Recursos de Estudio</Text>
+        <MaterialIcons name="summarize" size={48} color="#FFF" />
+        <Text style={styles.headerTitle}> Recursos de Estudio</Text>
         <Text style={styles.headerSubtitle}>Generados con Inteligencia Artificial</Text>
       </View>
 
@@ -389,7 +408,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   header: {
-    marginBottom: 24,
+    alignItems: 'center',
+    marginBottom: 32,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(99, 102, 241, 0.2)',
   },
   headerTitle: {
     fontSize: 32,

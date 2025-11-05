@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useClassroom } from '@/context/ClassroomContext';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface CreateClassroomProps {
   onSuccess?: (classroom: any) => void;
@@ -138,8 +139,11 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>✨ Crear Nuevo Salón</Text>
+      <View style={styles.header}>
+      <MaterialIcons name="create-new-folder" size={48} color="#FFF" />  
+      <Text style={styles.title}>Crear Nuevo Salón</Text>
       <Text style={styles.subtitle}>Configura tu salón de estudio colaborativo</Text>
+      </View>
 
       <View style={styles.form}>
         <View style={styles.inputGroup}>
@@ -192,7 +196,7 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
             {isLoading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.buttonText}>✨ Crear Salón</Text>
+              <Text style={styles.buttonText}>Crear Salón</Text>
             )}
           </Pressable>
         </View>
@@ -221,15 +225,14 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     color: '#FFFFFF',
-    textAlign: 'center',
+    marginTop: 16,
     marginBottom: 8,
+    textAlign: 'center',
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.6)',
-    textAlign: 'center',
-    marginBottom: 32,
   },
   form: {
     marginBottom: 32,
@@ -265,6 +268,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 16,
     alignItems: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(99, 102, 241, 0.2)',
   },
   createButton: {
     backgroundColor: '#6366F1',

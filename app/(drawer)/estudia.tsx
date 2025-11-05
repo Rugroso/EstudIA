@@ -2,6 +2,7 @@ import Search from '@/components/search';
 import { ScrollableTabView } from '@/components/scrollable-tab-view';
 import { StyleSheet, Text, View } from 'react-native';
 import { useClassroom } from '@/context/ClassroomContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function EstudiaScreen() {
   const { currentClassroom } = useClassroom();
@@ -11,6 +12,7 @@ export default function EstudiaScreen() {
       {currentClassroom ? (
         <>
           <View style={styles.header}>
+            <MaterialIcons name="border-color" size={48} color="#FFF" />
             <Text style={styles.headerTitle}>EstudIA - {currentClassroom.name}</Text>
             <Text style={styles.headerSubtitle}>Inteligencia artificial para tu aprendizaje</Text>
           </View>
@@ -32,6 +34,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A0A0F'
   },
   header: {
+    alignItems: 'center',
     marginBottom: 32,
     paddingBottom: 24,
     borderBottomWidth: 1,
@@ -41,12 +44,15 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     color: '#FFFFFF',
+    marginTop: 16,
     marginBottom: 8,
+    textAlign: 'center',
     letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.6)',
+    textAlign: 'center',
   },
   noClassroom: {
     flex: 1,

@@ -2,6 +2,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface JoinClassroomProps {
@@ -163,8 +164,11 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🚪 Unirse a Salón</Text>
+      <View style={styles.header}>
+        <MaterialIcons name="search" size={48} color="#FFF" />
+      <Text style={styles.title}>Unirse a Salón</Text>
       <Text style={styles.subtitle}>Ingresa el código de invitación para unirte</Text>
+      </View>
 
       <View style={styles.form}>
         <View style={styles.inputGroup}>
@@ -194,7 +198,7 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
             {isLoading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.buttonText}>🔍 Buscar Salón</Text>
+              <Text style={styles.buttonText}>Buscar Salón</Text>
             )}
           </Pressable>
         </View>
@@ -232,15 +236,14 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     color: '#FFFFFF',
-    textAlign: 'center',
+    marginTop: 16,
     marginBottom: 8,
+    textAlign: 'center',
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.6)',
-    textAlign: 'center',
-    marginBottom: 32,
   },
   form: {
     marginBottom: 32,
@@ -362,5 +365,12 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     lineHeight: 22,
     marginTop: 12,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(99, 102, 241, 0.2)',
   },
 });

@@ -189,7 +189,7 @@ export default function CubicleScreen() {
       {currentClassroom ? (
         <View style={styles.content}>
           <View style={styles.header}>
-            <MaterialIcons name="group" size={48} color="#FF9500" />
+            <MaterialIcons name="group" size={48} color="#FFF" />
             <Text style={styles.headerTitle}>Cubículo - {currentClassroom.name}</Text>
             <Text style={styles.headerSubtitle}>Estudia con compañeros en tiempo real</Text>
           </View>
