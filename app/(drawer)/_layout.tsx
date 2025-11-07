@@ -41,6 +41,7 @@ function CustomDrawerContent() {
     { title: "Resumen", path: "/(drawer)/overview", icon: "analytics-outline" },
     { title: "EstudIA", path: "/(drawer)/estudia", icon: "school-outline" },
     { title: "Recursos", path: "/(drawer)/resources", icon: "library-outline" },
+    { title: "Flashcards", path: "/(drawer)/flashcards", icon: "star-outline" },
     { title: "Cubículo", path: "/(drawer)/(stackcubicle)", icon: "business-outline" },
     { title: "Subir Documentos", path: "/(drawer)/upload", icon: "cloud-upload-outline" },
   ];
@@ -67,7 +68,11 @@ function CustomDrawerContent() {
     if (itemPath === "/(drawer)/resources") {
       return currentRoute.includes("resources") || (segments as string[]).includes("resources");
     }
-    
+
+    if (itemPath === "/(drawer)/flashcards") {
+      return currentRoute.includes("flashcards") || (segments as string[]).includes("flashcards");
+    }
+
     if (itemPath === "/(drawer)/upload") {
       return currentRoute.includes("upload") || (segments as string[]).includes("upload");
     }
@@ -218,6 +223,7 @@ export default function DrawerLayout() {
       <Drawer.Screen name="overview" />
       <Drawer.Screen name="estudia" />
       <Drawer.Screen name="resources" />
+      <Drawer.Screen name="flashcards" />
       <Drawer.Screen name="(stackcubicle)" />
       <Drawer.Screen name="upload" />
       <Drawer.Screen name="[classroomId]" />
