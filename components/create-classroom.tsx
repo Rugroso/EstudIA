@@ -92,7 +92,6 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
           {
             text: 'Copiar Código',
             onPress: () => {
-              // En una app real, aquí copiarías al clipboard
               console.log('Código copiado:', classroomCode);
             }
           },
@@ -101,7 +100,7 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
             onPress: async () => {
               onSuccess?.(classroom);
               const savedClassroomId = await getSavedClassroomId();
-              router.push('/(drawer)/overview');
+              router.push('/classroom/myClassroom' as any);
             }
           }
         ]

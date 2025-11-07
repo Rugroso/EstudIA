@@ -246,6 +246,7 @@ export default function CubicleChat() {
     setNewMessage('');
 
     try {
+      // Enviar el mensaje del usuario
       const { error } = await supabase.from('cubicle_messages').insert({
         session_id: sessionId,
         user_id: user.id,
@@ -254,8 +255,60 @@ export default function CubicleChat() {
 
       if (error) throw error;
 
-      // El mensaje se agregará automáticamente mediante la suscripción Realtime
-      // No es necesario recargar los mensajes manualmente
+      // Verificar si el mensaje menciona a @estudia
+      if (messageContent.toLowerCase().includes('@estudia')) {
+        console.log('🤖 Detectada mención a @estudia, llamando al chat...');
+        
+        // Llamar al endpoint de chat de EstudIA
+        try {
+          const response = await fetch(
+            'https://u7jss6bicb.execute-api.us-east-2.amazonaws.com/chat-classroom',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                message: messageContent.replace(/@estudia/gi, '').trim(),
+                user_id: user.id,
+                classroom_id: currentClassroom?.id,
+                session_id: sessionId,
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`Error del servidor: ${response.status}`);
+          }
+
+          const apiResponse = await response.json();
+          console.log('📦 Respuesta de EstudIA:', apiResponse);
+
+          if (!apiResponse.success || !apiResponse.data?.structuredContent) {
+            throw new Error('Respuesta sin structuredContent');
+          }
+
+          const estudiaResponse = apiResponse.data.structuredContent.data.response;
+
+          // Insertar la respuesta de EstudIA como un mensaje de bot (user_id diferente)
+          await supabase.from('cubicle_messages').insert({
+            session_id: sessionId,
+            user_id: '00000000-0000-0000-0000-000000000000', // UUID especial 
+            content: `🤖 EstudIA: ${estudiaResponse}`,
+          });
+
+          console.log('✅ Respuesta de EstudIA enviada al chat');
+        } catch (apiError) {
+          console.error('❌ Error llamando a EstudIA:', apiError);
+          // Enviar mensaje de error al chat
+          await supabase.from('cubicle_messages').insert({
+            session_id: sessionId,
+            user_id: '00000000-0000-0000-0000-000000000000', // UUID especial para EstudIA
+            content: '🤖 EstudIA: Lo siento, tuve un problema al procesar tu pregunta. Intenta de nuevo.',
+          });
+        }
+      }
+
       scrollToBottom();
     } catch (error: any) {
       Alert.alert('Error', 'No se pudo enviar el mensaje');
