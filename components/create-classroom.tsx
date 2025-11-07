@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useClassroom } from '@/context/ClassroomContext';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface CreateClassroomProps {
   onSuccess?: (classroom: any) => void;
@@ -13,11 +14,11 @@ interface CreateClassroomProps {
 
 export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroomProps) {
   const { user } = useAuth();
+  const { setCurrentClassroom } = useClassroom();
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { getSavedClassroomId, currentClassroom } = useClassroom();
   
 
     const showAlert = (title: string, message: string, buttons?: Array<{text: string, onPress?: () => void, style?: 'default' | 'cancel' | 'destructive'}>) => {
@@ -85,6 +86,33 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
         return;
       }
 
+      // Agregar al creador como miembro del salón
+      await supabase
+        .from('classroom_members')
+        .insert([
+          {
+            classroom_id: classroom.id,
+            user_id: user.id,
+            role: 'admin',
+            joined_at: new Date().toISOString(),
+          }
+        ]);
+
+      // Guardar en AsyncStorage
+      await AsyncStorage.setItem('currentClassroomId', classroom.id);
+      
+      // Actualizar el contexto
+      setCurrentClassroom({
+        id: classroom.id,
+        name: classroom.name,
+        subject: classroom.subject,
+        description: classroom.description,
+        code: classroom.code,
+        created_by: classroom.created_by,
+        is_active: classroom.is_active,
+        created_at: classroom.created_at,
+      });
+
       showAlert(
         'Salón Creado',
         `¡Tu salón "${name}" ha sido creado exitosamente!\n\nCódigo: ${classroomCode}\n\nComparte este código con tus compañeros para que se unan.`,
@@ -98,10 +126,9 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
           },
           {
             text: 'Ir al Salón',
-            onPress: async () => {
+            onPress: () => {
               onSuccess?.(classroom);
-              const savedClassroomId = await getSavedClassroomId();
-              router.push('/(drawer)/overview');
+              router.push('/(drawer)');
             }
           }
         ]
@@ -110,18 +137,6 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
       setName('');
       setSubject('');
       setDescription('');
-
-      // Agregar al creador como miembro del salón
-      await supabase
-        .from('classroom_members')
-        .insert([
-          {
-            classroom_id: classroom.id,
-            user_id: user.id,
-            role: 'admin',
-            joined_at: new Date().toISOString(),
-          }
-        ]);
 
 
     } catch (error) {
