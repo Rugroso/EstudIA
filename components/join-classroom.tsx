@@ -18,6 +18,9 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [foundClassroom, setFoundClassroom] = useState<any>(null);
+  const [joinedClassroom, setJoinedClassroom] = useState<any>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isAlreadyMember, setIsAlreadyMember] = useState(false);
 
   const showAlert = (title: string, message: string, buttons?: Array<{text: string, onPress?: () => void, style?: 'default' | 'cancel' | 'destructive'}>) => {
     if (Platform.OS === 'web') {
@@ -124,15 +127,10 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
           created_at: classroom.created_at,
         });
 
-        showAlert('Ya eres miembro', 'Ya perteneces a este salón.', [
-          {
-            text: 'Ir al Salón',
-            onPress: () => {
-              onSuccess?.(classroom);
-              router.replace(`/(drawer)`);
-            }
-          }
-        ]);
+        // Mostrar pantalla de éxito indicando que ya es miembro
+        setJoinedClassroom(classroom);
+        setIsAlreadyMember(true);
+        setShowSuccess(true);
         return;
       }
 
@@ -169,19 +167,10 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
         created_at: classroom.created_at,
       });
 
-      showAlert(
-        'Bienvenido',
-        `¡Te has unido exitosamente al salón "${classroom.name}"!`,
-        [
-          {
-            text: 'Ir al Salón',
-            onPress: () => {
-              onSuccess?.(classroom);
-              router.replace(`/(drawer)`);
-            }
-          }
-        ]
-      );
+      // Mostrar pantalla de éxito
+      setJoinedClassroom(classroom);
+      setIsAlreadyMember(false);
+      setShowSuccess(true);
 
       // Limpiar formulario
       setCode('');
@@ -194,6 +183,67 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
       setIsLoading(false);
     }
   };
+
+  // Si se muestra la pantalla de éxito
+  if (showSuccess && joinedClassroom) {
+    return (
+      <View style={styles.successContainer}>
+        <View style={styles.successContent}>
+          <View style={styles.successIconContainer}>
+            <MaterialIcons name="check-circle" size={80} color="#00C853" />
+          </View>
+          
+          <Text style={styles.successTitle}>
+            {isAlreadyMember ? '¡Ya eres miembro!' : '¡Bienvenido!'}
+          </Text>
+          
+          <Text style={styles.successMessage}>
+            {isAlreadyMember 
+              ? 'Ya perteneces a este salón'
+              : `Te has unido exitosamente al salón "${joinedClassroom.name}"`
+            }
+          </Text>
+
+          <View style={styles.codeContainer}>
+            <Text style={styles.codeLabel}>Información del Salón</Text>
+            <View style={styles.codeBox}>
+              <Text style={styles.codeText}>
+                {joinedClassroom.name}
+              </Text>
+              <Text style={styles.codeHint}>
+                {joinedClassroom.subject || 'Sin materia'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.successActions}>
+            <Pressable
+              style={[styles.button, styles.primaryButton]}
+              onPress={() => {
+                onSuccess?.(joinedClassroom);
+                router.replace(`/(drawer)`);
+              }}
+            >
+              <Text style={styles.buttonText}>Ir al Salón</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.button, styles.secondaryButton]}
+              onPress={() => {
+                setShowSuccess(false);
+                setJoinedClassroom(null);
+                setIsAlreadyMember(false);
+                setCode('');
+                setFoundClassroom(null);
+              }}
+            >
+              <Text style={styles.secondaryButtonText}>Unirse a Otro Salón</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -405,5 +455,87 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(99, 102, 241, 0.2)',
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#0A0F1E',
+  },
+  successContent: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+  },
+  successIconContainer: {
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  successMessage: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  codeContainer: {
+    width: '100%',
+    marginBottom: 32,
+  },
+  codeLabel: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  codeBox: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    alignItems: 'center',
+  },
+  codeText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#10B981',
+    letterSpacing: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  codeHint: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  successActions: {
+    width: '100%',
+    gap: 12,
+  },
+  primaryButton: {
+    backgroundColor: '#10B981',
+  },
+  secondaryButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  secondaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

@@ -102,6 +102,7 @@ export function ClassroomProvider({ children }: { children: React.ReactNode }) {
 
 export function useClassroom() {
   const context = useContext(ClassroomContext);
+  console.log('ClassroomContext:', context);
   if (context === undefined) {
     throw new Error('useClassroom must be used within a ClassroomProvider');
   }

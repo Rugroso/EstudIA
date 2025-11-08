@@ -19,6 +19,8 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [createdClassroom, setCreatedClassroom] = useState<any>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   
 
     const showAlert = (title: string, message: string, buttons?: Array<{text: string, onPress?: () => void, style?: 'default' | 'cancel' | 'destructive'}>) => {
@@ -113,31 +115,13 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
         created_at: classroom.created_at,
       });
 
-      showAlert(
-        'Salón Creado',
-        `¡Tu salón "${name}" ha sido creado exitosamente!\n\nCódigo: ${classroomCode}\n\nComparte este código con tus compañeros para que se unan.`,
-        [
-          {
-            text: 'Copiar Código',
-            onPress: () => {
-              // En una app real, aquí copiarías al clipboard
-              console.log('Código copiado:', classroomCode);
-            }
-          },
-          {
-            text: 'Ir al Salón',
-            onPress: () => {
-              onSuccess?.(classroom);
-              router.push('/(drawer)');
-            }
-          }
-        ]
-      );
+      // Mostrar pantalla de éxito
+      setCreatedClassroom(classroom);
+      setShowSuccess(true);
 
       setName('');
       setSubject('');
       setDescription('');
-
 
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -146,6 +130,62 @@ export default function CreateClassroom({ onSuccess, onCancel }: CreateClassroom
       setIsLoading(false);
     }
   };
+
+  const handleGoToClassroom = () => {
+    if (createdClassroom) {
+      console.log('Classroom created successfully:', createdClassroom);
+      router.push(`/(drawer)` as any);
+    }
+  };
+
+  // Pantalla de éxito
+  if (showSuccess && createdClassroom) {
+    return (
+      <View style={styles.successContainer}>
+        <View style={styles.successContent}>
+          <View style={styles.successIconContainer}>
+            <MaterialIcons name="check-circle" size={80} color="#10B981" />
+          </View>
+          
+          <Text style={styles.successTitle}>¡Salón Creado!</Text>
+          <Text style={styles.successMessage}>
+            Tu salón "{createdClassroom.name}" ha sido creado exitosamente
+          </Text>
+
+          <View style={styles.codeContainer}>
+            <Text style={styles.codeLabel}>Código de invitación</Text>
+            <View style={styles.codeBox}>
+              <Text style={styles.codeText}>{createdClassroom.code}</Text>
+            </View>
+            <Text style={styles.codeHint}>
+              Comparte este código con tus compañeros para que se unan
+            </Text>
+          </View>
+
+          <View style={styles.successActions}>
+            <Pressable 
+              style={[styles.button, styles.primaryButton]}
+              onPress={handleGoToClassroom}
+            >
+              <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
+              <Text style={styles.buttonText}>Ir al Salón</Text>
+            </Pressable>
+
+            <Pressable 
+              style={[styles.button, styles.secondaryButton]}
+              onPress={() => {
+                setShowSuccess(false);
+                setCreatedClassroom(null);
+              }}
+            >
+              <MaterialIcons name="add" size={20} color="#6366F1" />
+              <Text style={styles.secondaryButtonText}>Crear Otro Salón</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ScrollView 
@@ -330,5 +370,93 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 6,
     lineHeight: 22,
+  },
+  successContainer: {
+    flex: 1,
+    backgroundColor: '#0A0A0F',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  successContent: {
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  successIconContainer: {
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  codeContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    marginBottom: 32,
+    alignItems: 'center',
+  },
+  codeLabel: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginBottom: 12,
+    fontWeight: '600',
+  },
+  codeBox: {
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  codeText: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#6366F1',
+    letterSpacing: 8,
+    fontFamily: 'monospace',
+  },
+  codeHint: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.5)',
+    textAlign: 'center',
+  },
+  successActions: {
+    width: '100%',
+    gap: 12,
+  },
+  primaryButton: {
+    backgroundColor: '#6366F1',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    color: '#6366F1',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
