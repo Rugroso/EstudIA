@@ -158,7 +158,7 @@ export default function MyClassroom({ onClassroomSelect }: MyClassroomProps) {
       });
 
       // Navegar usando ruta dinámica
-      router.push(`/(drawer)/overview` as any);
+      router.push(`/(drawer)` as any);
       
       if (onClassroomSelect) {
         onClassroomSelect(classroom);

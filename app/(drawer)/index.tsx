@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/context/AuthContext"
 import { useClassroom } from "@/context/ClassroomContext"
 import { ScrollableTabView } from "@/components/scrollable-tab-view"
 import { Text, View, StyleSheet, ActivityIndicator, Alert, Pressable } from "react-native"
-import { router } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { MaterialIcons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 
@@ -28,126 +28,112 @@ interface ClassroomMember {
 
 export default function ClassroomOverview() {
   const { user } = useAuth()
-  const { currentClassroom, getSavedClassroomId } = useClassroom()
+  const { currentClassroom } = useClassroom()
+  const params = useLocalSearchParams()
+  
   const [classroom, setClassroom] = useState<Classroom | null>(null)
   const [memberInfo, setMemberInfo] = useState<ClassroomMember | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Memorizar el ID del classroom para evitar re-cálculos
+  const targetClassroomId = useMemo(() => {
+    const paramId = params.classroomId
+    if (paramId && typeof paramId === 'string') {
+      return paramId
+    }
+    return currentClassroom?.id || null
+  }, [params.classroomId, currentClassroom?.id])
+
   useEffect(() => {
-    const initializeClassroom = async () => {
-      setLoading(true)
-      try {
-        console.log("Current classroom from context:", currentClassroom)
-
-        if (currentClassroom) {
-          setClassroom(currentClassroom)
-          if (user) {
-            await fetchMemberInfo(currentClassroom.id)
-          }
-        } else if (user) {
-          const savedClassroomId = await getSavedClassroomId()
-          console.log("Saved classroom ID:", savedClassroomId)
-          if (savedClassroomId) {
-            await fetchClassroomData(savedClassroomId)
-          } else {
-            setError("Salón no encontrado")
-          }
-        } else {
-          setError("Debes iniciar sesión")
-        }
-      } catch (e) {
-        console.error(e)
-        setError("Error inicializando el salón")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    initializeClassroom()
-  }, [currentClassroom, user])
-
-  const fetchMemberInfo = async (classroomId: string) => {
-    console.log("Fetching member info for classroom ID:", classroomId)
-    try {
-      const { data: memberData, error } = await supabase
-        .from("classroom_members")
-        .select("role, joined_at")
-        .eq("classroom_id", classroomId)
-        .eq("user_id", user?.id)
-        .maybeSingle()
-
-      if (error) {
-        console.error(error)
-        setError("No tienes acceso a este salón")
-        return
-      }
-      if (!memberData) {
-        setError("No eres miembro de este salón")
-        return
-      }
-
-      setMemberInfo({
-        role: memberData.role,
-        joined_at: memberData.joined_at,
-      })
-    } catch (err) {
-      console.error("Error fetching member info:", err)
-      setError("Error al cargar información del miembro")
-    }
-  }
-
-  const fetchClassroomData = async (classroomId: string) => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const { data: memberData, error } = await supabase
-        .from("classroom_members")
-        .select(`
-        role,
-        joined_at,
-        classrooms!inner (
-          id,
-          name,
-          subject,
-          description,
-          code,
-          created_by,
-          is_active,
-          created_at
-        )
-      `)
-        .eq("classroom_id", classroomId)
-        .eq("user_id", user?.id)
-        .maybeSingle()
-
-      if (error) {
-        console.error(error)
-        setError("No tienes acceso a este salón o no existe")
-        return
-      }
-      if (!memberData) {
-        setError("No eres miembro de este salón")
-        return
-      }
-
-      setMemberInfo({
-        role: memberData.role,
-        joined_at: memberData.joined_at,
-      })
-      setClassroom(
-        (memberData.classrooms && Array.isArray(memberData.classrooms)
-          ? memberData.classrooms[0]
-          : memberData.classrooms) as Classroom,
-      )
-    } catch (err) {
-      console.error("Error fetching classroom:", err)
-      setError("Error al cargar el salón")
-    } finally {
+    // Validaciones tempranas
+    if (!user) {
+      setError("Debes iniciar sesión")
       setLoading(false)
+      return
     }
-  }
+
+    if (!targetClassroomId) {
+      setError("Selecciona un salón desde la página principal")
+      setLoading(false)
+      return
+    }
+
+    // Variable para controlar si el componente sigue montado
+    let cancelled = false
+
+    const loadClassroom = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        console.log("[Overview] Loading classroom:", targetClassroomId)
+
+        const { data, error: queryError } = await supabase
+          .from("classroom_members")
+          .select(`
+            role,
+            joined_at,
+            classrooms!inner (
+              id,
+              name,
+              subject,
+              description,
+              code,
+              created_by,
+              is_active,
+              created_at
+            )
+          `)
+          .eq("classroom_id", targetClassroomId)
+          .eq("user_id", user.id)
+          .maybeSingle()
+
+        // Si el componente se desmontó, no actualizar el estado
+        if (cancelled) return
+
+        if (queryError) {
+          console.error("[Overview] Query error:", queryError)
+          setError("No tienes acceso a este salón")
+          return
+        }
+
+        if (!data) {
+          setError("No eres miembro de este salón")
+          return
+        }
+
+        // Extraer datos
+        const classroomData = Array.isArray(data.classrooms)
+          ? data.classrooms[0]
+          : data.classrooms
+
+        setClassroom(classroomData as Classroom)
+        setMemberInfo({
+          role: data.role,
+          joined_at: data.joined_at,
+        })
+
+        console.log("[Overview] Classroom loaded successfully")
+      } catch (err) {
+        if (!cancelled) {
+          console.error("[Overview] Unexpected error:", err)
+          setError("Error al cargar el salón")
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadClassroom()
+
+    // Cleanup function
+    return () => {
+      cancelled = true
+    }
+  }, [targetClassroomId, user])
 
   const handleCopyCode = () => {
     if (classroom?.code) {

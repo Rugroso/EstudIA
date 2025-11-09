@@ -1,9 +1,11 @@
 import { useAuth } from '@/context/AuthContext';
+import { useClassroom } from '@/context/ClassroomContext';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface JoinClassroomProps {
   onSuccess?: (classroom: any) => void;
@@ -12,6 +14,7 @@ interface JoinClassroomProps {
 
 export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProps) {
   const { user } = useAuth();
+  const { setCurrentClassroom } = useClassroom();
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [foundClassroom, setFoundClassroom] = useState<any>(null);
@@ -106,12 +109,27 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
         .single();
 
       if (existingMember) {
+        // Guardar en AsyncStorage
+        await AsyncStorage.setItem('currentClassroomId', classroom.id);
+        
+        // Actualizar el contexto
+        setCurrentClassroom({
+          id: classroom.id,
+          name: classroom.name,
+          subject: classroom.subject,
+          description: classroom.description,
+          code: classroom.code,
+          created_by: classroom.created_by,
+          is_active: classroom.is_active,
+          created_at: classroom.created_at,
+        });
+
         showAlert('Ya eres miembro', 'Ya perteneces a este salón.', [
           {
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
-              router.push('/classroom/myClassroom' as any);
+              router.replace(`/(drawer)`);
             }
           }
         ]);
@@ -136,6 +154,21 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
         return;
       }
 
+      // Guardar en AsyncStorage
+      await AsyncStorage.setItem('currentClassroomId', classroom.id);
+      
+      // Actualizar el contexto
+      setCurrentClassroom({
+        id: classroom.id,
+        name: classroom.name,
+        subject: classroom.subject,
+        description: classroom.description,
+        code: classroom.code,
+        created_by: classroom.created_by,
+        is_active: classroom.is_active,
+        created_at: classroom.created_at,
+      });
+
       showAlert(
         'Bienvenido',
         `¡Te has unido exitosamente al salón "${classroom.name}"!`,
@@ -144,7 +177,7 @@ export default function JoinClassroom({ onSuccess, onCancel }: JoinClassroomProp
             text: 'Ir al Salón',
             onPress: () => {
               onSuccess?.(classroom);
-              router.push('/classroom/myClassroom' as any);
+              router.replace(`/(drawer)`);
             }
           }
         ]

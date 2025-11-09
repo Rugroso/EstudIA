@@ -38,7 +38,7 @@ function CustomDrawerContent() {
   };
 
   const menuItems = [
-    { title: "Resumen", path: "/(drawer)/overview", icon: "analytics-outline" },
+    { title: "Resumen", path: "/(drawer)", icon: "analytics-outline" },
     { title: "EstudIA", path: "/(drawer)/estudia", icon: "school-outline" },
     { title: "Recursos", path: "/(drawer)/resources", icon: "library-outline" },
     { title: "Flashcards", path: "/(drawer)/flashcards", icon: "star-outline" },
@@ -57,8 +57,9 @@ function CustomDrawerContent() {
       return currentRoute.includes("stackcubicle") || (segments as string[]).includes("(stackcubicle)");
     }
     
-    if (itemPath === "/(drawer)/overview") {
-      return currentRoute.includes("overview") || (segments as string[]).includes("overview");
+    if (itemPath === "/(drawer)") {
+      // index del drawer - es la ruta raíz
+      return segments.length === 1 && segments[0] === "(drawer)";
     }
     
     if (itemPath === "/(drawer)/estudia") {
@@ -220,13 +221,12 @@ export default function DrawerLayout() {
       }}
       drawerContent={() => <CustomDrawerContent />}
     >
-      <Drawer.Screen name="overview" />
+      <Drawer.Screen name="index" />
       <Drawer.Screen name="estudia" />
       <Drawer.Screen name="resources" />
       <Drawer.Screen name="flashcards" />
       <Drawer.Screen name="(stackcubicle)" />
       <Drawer.Screen name="upload" />
-      <Drawer.Screen name="[classroomId]" />
     </Drawer>
   );
 }

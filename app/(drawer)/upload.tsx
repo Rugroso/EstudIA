@@ -194,7 +194,7 @@ export default function UploadScreen() {
           console.error('Error obteniendo tamaño del archivo:', e);
         }
 
-        const { error: insertError } = await supabase
+        const { data: docData, error: insertError } = await supabase
           .from('classroom_documents')
           .insert({
             classroom_id: currentClassroom.id,
@@ -205,11 +205,78 @@ export default function UploadScreen() {
             mime_type: contentType,
             size_bytes: sizeBytes,
             status: 'uploaded'
-          });
+          })
+          .select('id')
+          .single();
 
-        if (insertError) {
+        if (insertError || !docData) {
           console.error('Error al insertar en classroom_documents:', insertError);
           Alert.alert('Archivo subido', 'El archivo se subió pero hubo un error al registrarlo en el classroom');
+        } else {
+          console.log('Documento registrado con ID:', docData.id);
+          
+          // Llamar a la lambda para procesar chunks y embeddings
+          try {
+            const API_BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://u7jss6bicb.execute-api.us-east-2.amazonaws.com';
+            const endpoint = `${API_BASE}/store-document-chunks`;
+            
+            console.log('🔄 Iniciando procesamiento de chunks...');
+            console.log('📍 Endpoint:', endpoint);
+            console.log('📍 API_BASE:', API_BASE);
+            console.log('📦 Payload:', {
+              classroom_document_id: docData.id,
+              chunk_size: 1000,
+              chunk_overlap: 100
+            });
+
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                classroom_document_id: docData.id,
+                chunk_size: 1000,
+                chunk_overlap: 100
+              })
+            });
+
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response ok:', response.ok);
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('❌ Error al procesar documento:', errorText);
+            } else {
+              const result = await response.json();
+              console.log('✅ Documento procesado:', result);
+              
+              // Actualizar status a 'ready' si fue exitoso
+              if (result.success) {
+                console.log('📝 Actualizando status a ready...');
+                await supabase
+                  .from('classroom_documents')
+                  .update({ 
+                    status: 'ready',
+                    embedding_ready: true,
+                    chunk_count: result.chunks_created || 0
+                  })
+                  .eq('id', docData.id);
+              }
+            }
+          } catch (chunkError) {
+            console.error('❌ Error al procesar chunks:', chunkError);
+            console.error('❌ Error details:', JSON.stringify(chunkError, null, 2));
+            // Marcar como failed si hay error
+            try {
+              await supabase
+                .from('classroom_documents')
+                .update({ status: 'failed' })
+                .eq('id', docData.id);
+            } catch (updateError) {
+              console.error('❌ Error al actualizar status a failed:', updateError);
+            }
+          }
         }
       }
 

@@ -34,13 +34,13 @@ export default function Homepage() {
       const savedClassroomId = await getSavedClassroomId()
 
       if (savedClassroomId) {
-        router.replace(`/(drawer)/overview` as any)
+        router.replace(`/(drawer)` as any)
       } else {
-        router.push('/classroom/myClassroom')
+        router.replace('/classroom/myClassroom')
       }
     } catch (error) {
       console.error("Error loading saved classroom:", error)
-      router.push('/classroom/myClassroom')
+      router.replace('/classroom/myClassroom')
     }
   }
 
